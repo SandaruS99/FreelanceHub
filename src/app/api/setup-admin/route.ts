@@ -10,20 +10,20 @@ export async function GET() {
         const email = 'admin@freelancehub.com';
         const password = 'Admin@123456';
 
-        const existingAdmin = await User.findOne({ email });
-        if (existingAdmin) {
-            return NextResponse.json({ message: 'Admin already exists!', email });
-        }
-
         const hashedPassword = await bcrypt.hash(password, 12);
-        await User.create({
-            name: 'Super Admin',
-            email,
-            password: hashedPassword,
-            role: 'admin',
-            status: 'active',
-            emailVerified: true,
-        });
+        
+        // Force update the account aggressively
+        await User.findOneAndUpdate(
+            { email },
+            {
+                name: 'Super Admin',
+                password: hashedPassword,
+                role: 'admin',
+                status: 'active',
+                emailVerified: true,
+            },
+            { upsert: true, new: true }
+        );
 
         return NextResponse.json({
             message: '🎉 SUCCESS! Super Admin account created.',
