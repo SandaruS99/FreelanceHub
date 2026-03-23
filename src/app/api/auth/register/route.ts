@@ -30,13 +30,13 @@ export async function POST(req: NextRequest) {
             password,
             businessName,
             role: 'freelancer',
-            status: 'pending',
+            status: 'active', // Auto-activate for testing
             verificationToken,
         });
 
         return NextResponse.json(
             {
-                message: 'Registration successful! Your account is pending admin approval.',
+                message: 'Registration successful! You can now log in.',
                 userId: user._id,
             },
             { status: 201 }
