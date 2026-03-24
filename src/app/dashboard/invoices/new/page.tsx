@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2, Plus, Trash2, Calendar, FileText, Send, X, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Plus, Trash2, Calendar, FileText, Send, X } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
 
 interface Client {
@@ -33,7 +33,6 @@ function InvoiceForm() {
     const [showSendModal, setShowSendModal] = useState(false);
     const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null);
     const [sendingEmail, setSendingEmail] = useState(false);
-    const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
 
     // Default dates
     const today = new Date().toISOString().split('T')[0];
@@ -147,7 +146,6 @@ function InvoiceForm() {
 
             // If WhatsApp, open it
             if (data.whatsappUrl) {
-                setWhatsappUrl(data.whatsappUrl);
                 window.open(data.whatsappUrl, '_blank');
             }
 
@@ -392,7 +390,9 @@ function InvoiceForm() {
                             </div>
                             <div className="pt-4 border-t border-white/5 text-center">
                                 <FileText className="w-8 h-8 text-slate-600 mx-auto mb-3" />
-                                <p className="text-xs text-slate-400">Invoice creation and amounts will be stored in USD background for cross-currency stability, but displayed in <span className="text-white font-bold">{userCurrency}</span>.</p>
+                                <p className="text-sm text-slate-400">
+                                    Once saved as Draft/Sent, a shareable link and PDF generation option will be available.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -409,8 +409,10 @@ function InvoiceForm() {
                             <Send className="w-6 h-6 text-green-400" />
                         </div>
 
-                        <h3 className="text-xl font-bold text-white mb-2">Invoice Saved!</h3>
-                        <p className="text-slate-400 text-sm mb-6">Send this invoice to the client now via Email and WhatsApp?</p>
+                        <h3 className="text-xl font-bold text-white mb-2 text-center">Invoice Saved!</h3>
+                        <p className="text-slate-400 text-sm text-center mb-6">
+                            Would you like to email this invoice to the client immediately?
+                        </p>
 
                         <div className="flex flex-col gap-3">
                             <button
@@ -419,26 +421,14 @@ function InvoiceForm() {
                                 className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium py-2.5 rounded-xl transition disabled:opacity-50"
                             >
                                 {sendingEmail ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                                Send via Email & WA
+                                Yes, Send Email
                             </button>
-
-                            {whatsappUrl && (
-                                <Link
-                                    href={whatsappUrl}
-                                    target="_blank"
-                                    className="w-full flex justify-center items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 font-medium py-2.5 rounded-xl transition"
-                                >
-                                    <MessageCircle className="w-5 h-5" />
-                                    Open WhatsApp Again
-                                </Link>
-                            )}
-
                             <button
                                 onClick={handleSkipEmail}
                                 disabled={sendingEmail}
-                                className="w-full text-slate-400 hover:text-white text-sm py-2"
+                                className="w-full flex justify-center items-center bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium py-2.5 rounded-xl transition"
                             >
-                                Finish Later
+                                No, I'll send it later
                             </button>
                         </div>
                     </div>

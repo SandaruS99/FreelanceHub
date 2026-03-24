@@ -157,16 +157,6 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                             Send Invoice (Email & WA)
                         </button>
                     )}
-                    {(invoice.status === 'sent' || invoice.status === 'overdue' || invoice.status === 'paid') && (
-                        <button
-                            onClick={sendInvoice}
-                            disabled={updating}
-                            className="flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 px-4 py-2 rounded-xl transition text-sm font-medium"
-                        >
-                            <MessageCircle className="w-4 h-4" />
-                            WhatsApp
-                        </button>
-                    )}
                     {(invoice.status === 'sent' || invoice.status === 'overdue') && (
                         <button
                             onClick={() => updateStatus('paid')}
