@@ -36,6 +36,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ clients, total, page, pages: Math.ceil(total / limit) });
 }
 
+import User from '@/models/User';
+
 export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -44,6 +46,20 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
 
     await dbConnect();
+
+    const user = await User.findById(userId);
+    if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (user.plan === 'free') {
+        const clientCount = await Client.countDocuments({ freelancerId: userId });
+        if (clientCount >= 5) {
+            return NextResponse.json({
+                error: 'Free plan is limited to 5 clients. Please upgrade to add more.'
+            }, { status: 403 });
+        }
+    }
 
     const client = await Client.create({ ...data, freelancerId: userId });
     return NextResponse.json({ client }, { status: 201 });

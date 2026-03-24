@@ -7,7 +7,7 @@ import { signOut, useSession } from 'next-auth/react';
 import {
     LayoutDashboard, Users, FolderKanban, CheckSquare, FileText, BarChart2,
     Settings, LogOut, Briefcase, Menu, X, ChevronDown, MessageSquare,
-    CalendarDays
+    CalendarDays, CreditCard
 } from 'lucide-react';
 import NotificationsDropdown from '@/components/NotificationsDropdown';
 
@@ -79,7 +79,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 {/* Bottom */}
                 <div className="border-t border-white/5 p-4 space-y-0.5">
-                    <Link href="/dashboard/settings" onClick={() => setSidebarOpen(false)} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname.startsWith('/dashboard/settings') ? 'bg-purple-600/20 text-purple-300' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                    <Link href="/dashboard/settings/billing" onClick={() => setSidebarOpen(false)} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === '/dashboard/settings/billing' ? 'bg-purple-600/20 text-purple-300' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                        <CreditCard className="w-4 h-4" />
+                        Billing
+                    </Link>
+                    <Link href="/dashboard/settings" onClick={() => setSidebarOpen(false)} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === '/dashboard/settings' ? 'bg-purple-600/20 text-purple-300' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
                         <Settings className="w-4 h-4" />
                         Settings
                     </Link>

@@ -98,9 +98,14 @@ export default function NewClientPage() {
             </div>
 
             {error && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-red-400 text-sm mb-6 flex items-center justify-between">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-red-400 text-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative pr-10">
                     <span>{error}</span>
-                    <button onClick={() => setError('')} className="text-red-400 hover:text-red-300 transition shrink-0">&times;</button>
+                    {error.includes('upgrade') && (
+                        <Link href="/dashboard/settings/billing" className="text-sm font-semibold bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-lg transition shrink-0">
+                            Upgrade Plan
+                        </Link>
+                    )}
+                    <button onClick={() => setError('')} className="absolute right-4 top-4 text-red-400 hover:text-red-300 transition shrink-0">&times;</button>
                 </div>
             )}
 
