@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, FileText } from 'lucide-react';
+import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, FileText, MessageCircle } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
 
 interface LineItem {
@@ -157,11 +157,21 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                             Send Invoice (Email & WA)
                         </button>
                     )}
+                    {(invoice.status === 'sent' || invoice.status === 'overdue' || invoice.status === 'paid') && (
+                        <button
+                            onClick={sendInvoice}
+                            disabled={updating}
+                            className="flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 px-4 py-2 rounded-xl transition text-sm font-medium"
+                        >
+                            <MessageCircle className="w-4 h-4" />
+                            WhatsApp
+                        </button>
+                    )}
                     {(invoice.status === 'sent' || invoice.status === 'overdue') && (
                         <button
                             onClick={() => updateStatus('paid')}
                             disabled={updating}
-                            className="flex items-center gap-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 px-4 py-2 rounded-xl transition text-sm font-medium"
+                            className="flex items-center gap-2 bg-green-500/10 hover:bg-green-500/20 border border-green-200/20 text-green-400 px-4 py-2 rounded-xl transition text-sm font-medium"
                         >
                             {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                             Mark as Paid
