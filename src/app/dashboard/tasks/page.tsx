@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Loader2, Calendar, AlertCircle } from 'lucide-react';
+import { Plus, Loader2, Calendar, AlertCircle, Info, User, Briefcase, AlignLeft, Clock } from 'lucide-react';
 
 interface Task {
     _id: string;
     title: string;
+    description?: string;
     status: 'todo' | 'in-progress' | 'review' | 'done';
     priority: string;
     dueDate?: string;
+    createdAt: string;
     projectId?: { _id: string; name: string };
     clientId?: { _id: string; name: string };
 }
@@ -127,17 +129,74 @@ export default function TasksPage() {
                                                     <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded border tracking-wider ${priorityColors[task.priority]}`}>
                                                         {task.priority}
                                                     </span>
-                                                    <div className="flex items-center gap-1 opacity-10 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <select
-                                                            value={task.status}
-                                                            onChange={(e) => updateTaskStatus(task._id, e.target.value as Task['status'])}
-                                                            className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-purple-500/50"
-                                                        >
-                                                            <option value="todo">To Do</option>
-                                                            <option value="in-progress">In Progress</option>
-                                                            <option value="review">Review</option>
-                                                            <option value="done">Done</option>
-                                                        </select>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="relative group/info">
+                                                            <Info className="w-4 h-4 text-slate-500 hover:text-purple-400 transition-colors cursor-help" />
+                                                            
+                                                            {/* Tooltip Content */}
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-4 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl invisible group-hover/info:visible opacity-0 group-hover/info:opacity-100 transition-all duration-200 z-50 pointer-events-none">
+                                                                <div className="space-y-3">
+                                                                    <div className="flex items-center gap-2 text-white font-medium text-xs border-b border-white/5 pb-2 mb-2">
+                                                                        <Info className="w-3.5 h-3.5 text-purple-400" />
+                                                                        Task Details
+                                                                    </div>
+                                                                    
+                                                                    {(task.clientId || task.projectId) && (
+                                                                        <div className="space-y-2">
+                                                                            {task.clientId && (
+                                                                                <div className="flex items-start gap-2 text-[11px]">
+                                                                                    <User className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
+                                                                                    <div>
+                                                                                        <p className="text-slate-500 leading-none mb-1">Client</p>
+                                                                                        <p className="text-slate-200 font-medium">{task.clientId.name}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                            {task.projectId && (
+                                                                                <div className="flex items-start gap-2 text-[11px]">
+                                                                                    <Briefcase className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
+                                                                                    <div>
+                                                                                        <p className="text-slate-500 leading-none mb-1">Project</p>
+                                                                                        <p className="text-slate-200 font-medium">{task.projectId.name}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {task.description && (
+                                                                        <div className="flex items-start gap-2 text-[11px] pt-1 border-t border-white/5">
+                                                                            <AlignLeft className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
+                                                                            <div>
+                                                                                <p className="text-slate-500 leading-none mb-1">Description</p>
+                                                                                <p className="text-slate-300 line-clamp-3 leading-relaxed">{task.description}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className="flex items-center gap-2 text-[10px] text-slate-500 pt-2 border-t border-white/5 mt-1">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        Created on {new Date(task.createdAt).toLocaleDateString()}
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                {/* Tooltip Arrow */}
+                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900/95" />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-1 opacity-10 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <select
+                                                                value={task.status}
+                                                                onChange={(e) => updateTaskStatus(task._id, e.target.value as Task['status'])}
+                                                                className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-purple-500/50"
+                                                            >
+                                                                <option value="todo">To Do</option>
+                                                                <option value="in-progress">In Progress</option>
+                                                                <option value="review">Review</option>
+                                                                <option value="done">Done</option>
+                                                            </select>
+                                                        </div>
                                                     </div>
                                                 </div>
 
