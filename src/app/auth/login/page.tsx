@@ -12,11 +12,13 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [suspended, setSuspended] = useState(false);
     const [loading, setLoading] = useState(false);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError('');
+        setSuspended(false);
         setLoading(true);
 
         // Step 1: Pre-check credentials and account status to get specific error codes.
@@ -34,7 +36,7 @@ export default function LoginPage() {
             if (preCheckData.error === 'PENDING_APPROVAL') {
                 router.push('/auth/pending');
             } else if (preCheckData.error === 'ACCOUNT_SUSPENDED') {
-                setError('Your account has been suspended. Please contact the administrator.');
+                setSuspended(true);
             } else {
                 setError('Invalid email or password. Please try again.');
             }
@@ -119,6 +121,14 @@ export default function LoginPage() {
                             </div>
                         </div>
 
+                        {suspended && (
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm">
+                                Your account has been suspended.{' '}
+                                <Link href="/contact" className="underline text-red-300 hover:text-red-200 font-medium">
+                                    Contact Admin
+                                </Link>
+                            </div>
+                        )}
                         {error && (
                             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm">
                                 {error}
