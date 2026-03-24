@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { 
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-    LineChart, Line, PieChart, Pie, Cell, Legend, AreaChart, Area 
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    LineChart, Line, PieChart, Pie, Cell, Legend, AreaChart, Area
 } from 'recharts';
-import { 
-    TrendingUp, DollarSign, Briefcase, CheckCircle, Download, 
+import {
+    TrendingUp, DollarSign, Briefcase, CheckCircle, Download,
     Calendar, Filter, FileText, ChevronRight, Loader2, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
+import { useCurrency } from '@/lib/useCurrency';
 
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -34,6 +35,7 @@ export default function ReportsPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [mounted, setMounted] = useState(false);
     const reportRef = useRef<HTMLDivElement>(null);
+    const { symbol, format } = useCurrency();
 
     useEffect(() => {
         setMounted(true);
@@ -58,7 +60,7 @@ export default function ReportsPage() {
             const imgProps = pdf.getImageProperties(imgData);
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            
+
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`FreelanceHub_Report_${new Date().toISOString().split('T')[0]}.pdf`);
         } catch (error) {
@@ -108,34 +110,34 @@ export default function ReportsPage() {
             <div ref={reportRef} className="space-y-8 p-1 rounded-3xl">
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard 
-                        title="Total Revenue" 
-                        value={`$${data.summary.totalRevenue.toLocaleString()}`} 
-                        sub="All time earnings" 
+                    <StatCard
+                        title="Total Revenue"
+                        value={format(data.summary.totalRevenue)}
+                        sub="All time earnings"
                         icon={<DollarSign className="w-5 h-5" />}
                         color="text-emerald-400"
                         bg="bg-emerald-500/10"
                     />
-                    <StatCard 
-                        title="Pending" 
-                        value={`$${data.summary.totalPending.toLocaleString()}`} 
-                        sub="Outstanding invoices" 
+                    <StatCard
+                        title="Pending"
+                        value={format(data.summary.totalPending)}
+                        sub="Outstanding invoices"
                         icon={<TrendingUp className="w-5 h-5" />}
                         color="text-blue-400"
                         bg="bg-blue-500/10"
                     />
-                    <StatCard 
-                        title="Active Projects" 
-                        value={data.summary.activeProjects} 
-                        sub="Currently in progress" 
+                    <StatCard
+                        title="Active Projects"
+                        value={data.summary.activeProjects}
+                        sub="Currently in progress"
                         icon={<Briefcase className="w-5 h-5" />}
                         color="text-purple-400"
                         bg="bg-purple-500/10"
                     />
-                    <StatCard 
-                        title="Success Rate" 
-                        value={`${Math.round((data.summary.completedProjects / (data.summary.activeProjects + data.summary.completedProjects || 1)) * 100)}%`} 
-                        sub="Project completion" 
+                    <StatCard
+                        title="Success Rate"
+                        value={`${Math.round((data.summary.completedProjects / (data.summary.activeProjects + data.summary.completedProjects || 1)) * 100)}%`}
+                        sub="Project completion"
                         icon={<CheckCircle className="w-5 h-5" />}
                         color="text-orange-400"
                         bg="bg-orange-500/10"
@@ -157,18 +159,18 @@ export default function ReportsPage() {
                                 <AreaChart data={chartData}>
                                     <defs>
                                         <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                                         </linearGradient>
                                         <linearGradient id="colorPen" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
                                     <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
-                                    <Tooltip 
+                                    <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${symbol}${v}`} />
+                                    <Tooltip
                                         contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }}
                                         itemStyle={{ fontSize: '12px' }}
                                     />
@@ -198,7 +200,7 @@ export default function ReportsPage() {
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip 
+                                    <Tooltip
                                         contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }}
                                     />
                                     <Legend iconType="circle" />
@@ -234,13 +236,13 @@ export default function ReportsPage() {
                                             {m.count} Invoices
                                         </td>
                                         <td className="px-8 py-6 text-emerald-400 font-bold text-right">
-                                            ${m.revenue.toLocaleString()}
+                                            {format(m.revenue)}
                                         </td>
                                         <td className="px-8 py-6 text-blue-400 font-bold text-right">
-                                            ${m.pending.toLocaleString()}
+                                            {format(m.pending)}
                                         </td>
                                         <td className="px-8 py-6 text-white font-black text-right">
-                                            ${(m.revenue + m.pending).toLocaleString()}
+                                            {format(m.revenue + m.pending)}
                                         </td>
                                     </tr>
                                 ))}

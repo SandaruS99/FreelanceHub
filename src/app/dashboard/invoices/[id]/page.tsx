@@ -4,6 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, FileText } from 'lucide-react';
+import { useCurrency } from '@/lib/useCurrency';
 
 interface LineItem {
     description: string;
@@ -42,6 +43,7 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const { formatFull } = useCurrency();
 
     useEffect(() => {
         fetch(`/api/invoices/${id}`)
@@ -148,7 +150,7 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                             Mark as Paid
                         </button>
                     )}
-                    <button 
+                    <button
                         onClick={handleDownload}
                         className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl transition text-sm font-medium"
                     >
@@ -198,7 +200,7 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
 
                                 <p className="text-slate-500 text-sm">Amount Due:</p>
                                 <p className="text-slate-900 font-bold text-sm text-right">
-                                    ${(invoice.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    {formatFull(invoice.total || 0)}
                                 </p>
                             </div>
                         </div>
@@ -236,10 +238,10 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                                 {invoice.lineItems.map((item, idx) => (
                                     <tr key={idx}>
                                         <td className="py-4 text-slate-800">{item.description}</td>
-                                        <td className="py-4 text-slate-600 text-right">${item.unitPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                        <td className="py-4 text-slate-600 text-right">{formatFull(item.unitPrice)}</td>
                                         <td className="py-4 text-slate-600 text-right">{item.quantity}</td>
                                         <td className="py-4 text-slate-800 font-medium text-right">
-                                            ${(item.quantity * item.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {formatFull(item.quantity * item.unitPrice)}
                                         </td>
                                     </tr>
                                 ))}
@@ -261,24 +263,24 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                         <div className="w-full sm:w-1/3 space-y-3">
                             <div className="flex justify-between text-sm">
                                 <span className="text-slate-500">Subtotal</span>
-                                <span className="text-slate-800 font-medium">${invoice.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                <span className="text-slate-800 font-medium">{formatFull(invoice.subtotal)}</span>
                             </div>
                             {invoice.taxTotal > 0 && (
                                 <div className="flex justify-between text-sm">
                                     <span className="text-slate-500">Tax</span>
-                                    <span className="text-slate-800 font-medium">${invoice.taxTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    <span className="text-slate-800 font-medium">{formatFull(invoice.taxTotal)}</span>
                                 </div>
                             )}
                             {invoice.discount > 0 && (
                                 <div className="flex justify-between text-sm">
                                     <span className="text-slate-500">Discount</span>
-                                    <span className="text-slate-800 font-medium">-${invoice.discount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    <span className="text-slate-800 font-medium">-{formatFull(invoice.discount)}</span>
                                 </div>
                             )}
                             <div className="flex justify-between items-center pt-3 border-t-2 border-slate-200">
                                 <span className="font-bold text-slate-800">Total Due</span>
                                 <span className="text-xl font-black text-slate-900">
-                                    ${(invoice.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    {formatFull(invoice.total || 0)}
                                 </span>
                             </div>
                         </div>

@@ -7,6 +7,7 @@ import {
     ArrowLeft, Building2, Mail, Phone, MapPin, Globe, Loader2,
     Trash2, Edit, Calendar, CheckSquare, FileText, Plus, Circle
 } from 'lucide-react';
+import { useCurrency } from '@/lib/useCurrency';
 
 interface Client {
     _id: string;
@@ -69,6 +70,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
+    const { format } = useCurrency();
 
     useEffect(() => {
         // Fetch client, projects, and invoices in parallel
@@ -335,7 +337,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
                                         </div>
                                         <div className="flex items-center gap-3 shrink-0">
                                             <p className="text-white font-semibold text-sm">
-                                                {invoice.currency} {invoice.total.toLocaleString()}
+                                                {format(invoice.total)}
                                             </p>
                                             <span className={`text-xs px-2 py-0.5 rounded capitalize border ${INVOICE_STATUS_COLORS[invoice.status] || 'bg-slate-500/20 text-slate-400 border-slate-500/30'}`}>
                                                 {invoice.status}

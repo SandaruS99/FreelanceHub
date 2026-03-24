@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus, Search, FileText, Download, Loader2, ArrowRight } from 'lucide-react';
+import { useCurrency } from '@/lib/useCurrency';
 
 interface Invoice {
     _id: string;
@@ -19,6 +20,7 @@ export default function InvoicesPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const { formatFull } = useCurrency();
 
     const fetchInvoices = useCallback(async () => {
         setLoading(true);
@@ -139,7 +141,7 @@ export default function InvoicesPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 font-medium text-white">
-                                            ${(invoice.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {formatFull(invoice.total || 0)}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-white">{new Date(invoice.issueDate).toLocaleDateString()}</div>
