@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import {
     LayoutDashboard, Users, FolderKanban, CheckSquare, FileText, BarChart2,
-    Settings, LogOut, Briefcase, Menu, X, Bell, ChevronDown, MessageSquare
+    Settings, LogOut, Briefcase, Menu, X, Bell, ChevronDown, MessageSquare,
+    Calendar
 } from 'lucide-react';
 
 const navItems = [
