@@ -129,101 +129,68 @@ export default function TasksPage() {
                                                     <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded border tracking-wider ${priorityColors[task.priority]}`}>
                                                         {task.priority}
                                                     </span>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="relative group/info">
-                                                            <Info className="w-4 h-4 text-slate-500 hover:text-purple-400 transition-colors cursor-help" />
-                                                            
-                                                            {/* Tooltip Content */}
-                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-4 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl invisible group-hover/info:visible opacity-0 group-hover/info:opacity-100 transition-all duration-200 z-50 pointer-events-none">
-                                                                <div className="space-y-3">
-                                                                    <div className="flex items-center gap-2 text-white font-medium text-xs border-b border-white/5 pb-2 mb-2">
-                                                                        <Info className="w-3.5 h-3.5 text-purple-400" />
-                                                                        Task Details
-                                                                    </div>
-                                                                    
-                                                                    {(task.clientId || task.projectId) && (
-                                                                        <div className="space-y-2">
-                                                                            {task.clientId && (
-                                                                                <div className="flex items-start gap-2 text-[11px]">
-                                                                                    <User className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
-                                                                                    <div>
-                                                                                        <p className="text-slate-500 leading-none mb-1">Client</p>
-                                                                                        <p className="text-slate-200 font-medium">{task.clientId.name}</p>
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                            {task.projectId && (
-                                                                                <div className="flex items-start gap-2 text-[11px]">
-                                                                                    <Briefcase className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
-                                                                                    <div>
-                                                                                        <p className="text-slate-500 leading-none mb-1">Project</p>
-                                                                                        <p className="text-slate-200 font-medium">{task.projectId.name}</p>
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
-
-                                                                    {task.description && (
-                                                                        <div className="flex items-start gap-2 text-[11px] pt-1 border-t border-white/5">
-                                                                            <AlignLeft className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
-                                                                            <div>
-                                                                                <p className="text-slate-500 leading-none mb-1">Description</p>
-                                                                                <p className="text-slate-300 line-clamp-3 leading-relaxed">{task.description}</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-
-                                                                    <div className="flex items-center gap-2 text-[10px] text-slate-500 pt-2 border-t border-white/5 mt-1">
-                                                                        <Clock className="w-3 h-3" />
-                                                                        Created on {new Date(task.createdAt).toLocaleDateString()}
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                {/* Tooltip Arrow */}
-                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900/95" />
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex items-center gap-1 opacity-10 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <select
-                                                                value={task.status}
-                                                                onChange={(e) => updateTaskStatus(task._id, e.target.value as Task['status'])}
-                                                                className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-purple-500/50"
-                                                            >
-                                                                <option value="todo">To Do</option>
-                                                                <option value="in-progress">In Progress</option>
-                                                                <option value="review">Review</option>
-                                                                <option value="done">Done</option>
-                                                            </select>
-                                                        </div>
+                                                    <div className="flex items-center gap-1 opacity-10 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <select
+                                                            value={task.status}
+                                                            onChange={(e) => updateTaskStatus(task._id, e.target.value as Task['status'])}
+                                                            className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-purple-500/50"
+                                                        >
+                                                            <option value="todo">To Do</option>
+                                                            <option value="in-progress">In Progress</option>
+                                                            <option value="review">Review</option>
+                                                            <option value="done">Done</option>
+                                                        </select>
                                                     </div>
                                                 </div>
 
                                                 <h4 className="text-white font-medium text-sm mb-3 leading-snug group-hover:text-purple-300 transition-colors">{task.title}</h4>
 
-                                                {task.projectId && (
-                                                    <div className="mb-3 flex items-center gap-1.5">
-                                                        <div className="w-1 h-3 bg-purple-500/50 rounded-full" />
-                                                        <p className="text-[11px] text-slate-400 truncate max-w-[180px]">
-                                                            {task.projectId.name}
-                                                        </p>
-                                                    </div>
-                                                )}
+                                                {/* Task Info Section (Always Visible) */}
+                                                <div className="space-y-2 mb-4">
+                                                    {(task.clientId || task.projectId) && (
+                                                        <div className="space-y-1.5">
+                                                            {task.clientId && (
+                                                                <div className="flex items-center gap-2 text-[10px] text-slate-400 bg-white/5 px-2 py-1 rounded-lg border border-white/5">
+                                                                    <User className="w-3 h-3 text-blue-400" />
+                                                                    <span className="truncate">{task.clientId.name}</span>
+                                                                </div>
+                                                            )}
+                                                            {task.projectId && (
+                                                                <div className="flex items-center gap-2 text-[10px] text-slate-400 bg-white/5 px-2 py-1 rounded-lg border border-white/5">
+                                                                    <Briefcase className="w-3 h-3 text-purple-400" />
+                                                                    <span className="truncate">{task.projectId.name}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {task.description && (
+                                                        <div className="flex gap-2 text-[11px] text-slate-500 line-clamp-2 leading-relaxed italic">
+                                                            <AlignLeft className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                                            {task.description}
+                                                        </div>
+                                                    )}
+                                                </div>
 
                                                 <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/5">
-                                                    {task.dueDate ? (
-                                                        <div className={`flex items-center gap-1.5 text-[10px] ${new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-red-400' : 'text-slate-500'}`}>
-                                                            <Calendar className="w-3 h-3" />
-                                                            <span>{new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                                                        </div>
-                                                    ) : <div />}
+                                                    <div className="flex items-center gap-2">
+                                                        <Info className="w-3.5 h-3.5 text-slate-600" title="Task Info" />
+                                                        {task.dueDate ? (
+                                                            <div className={`flex items-center gap-1.5 text-[10px] ${new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-red-400' : 'text-slate-500'}`}>
+                                                                <Calendar className="w-3 h-3" />
+                                                                <span>{new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-slate-600">
+                                                                <Clock className="w-3 h-3" />
+                                                                <span>{new Date(task.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                     
-                                                    {task.clientId && !task.projectId && (
-                                                        <span className="text-[10px] text-slate-500 italic truncate max-w-[100px]">
-                                                            {task.clientId.name}
-                                                        </span>
-                                                    )}
+                                                    <div className="text-[9px] text-slate-700 font-mono uppercase tracking-tighter">
+                                                        ID: {task._id.slice(-6)}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
