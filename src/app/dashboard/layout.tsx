@@ -15,6 +15,7 @@ const navItems = [
     { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
     { href: '/dashboard/tasks', label: 'Tasks', icon: CheckSquare },
     { href: '/dashboard/invoices', label: 'Invoices', icon: FileText },
+    { href: '/dashboard/calendar', label: 'Calendar', icon: Calendar },
     { href: '/dashboard/crm', label: 'CRM Log', icon: MessageSquare },
     { href: '/dashboard/reports', label: 'Reports', icon: BarChart2 },
 ];
