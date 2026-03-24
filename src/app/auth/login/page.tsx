@@ -19,6 +19,29 @@ export default function LoginPage() {
         setError('');
         setLoading(true);
 
+        // Step 1: Pre-check credentials and account status to get specific error codes.
+        // NextAuth v5 swallows custom errors, so we handle status checks here first.
+        const preCheck = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
+
+        const preCheckData = await preCheck.json();
+
+        if (!preCheck.ok) {
+            setLoading(false);
+            if (preCheckData.error === 'PENDING_APPROVAL') {
+                router.push('/auth/pending');
+            } else if (preCheckData.error === 'ACCOUNT_SUSPENDED') {
+                setError('Your account has been suspended. Please contact the administrator.');
+            } else {
+                setError('Invalid email or password. Please try again.');
+            }
+            return;
+        }
+
+        // Step 2: Credentials are valid and user is active — proceed with NextAuth session creation
         const result = await signIn('credentials', {
             email,
             password,
@@ -28,13 +51,7 @@ export default function LoginPage() {
         setLoading(false);
 
         if (result?.error) {
-            if (result.error === 'PENDING_APPROVAL') {
-                router.push('/auth/pending');
-            } else if (result.error === 'ACCOUNT_SUSPENDED') {
-                setError('Your account has been suspended. Please contact the administrator.');
-            } else {
-                setError('Invalid email or password. Please try again.');
-            }
+            setError('Invalid email or password. Please try again.');
             return;
         }
 
