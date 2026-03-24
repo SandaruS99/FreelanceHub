@@ -31,7 +31,7 @@ interface Invoice {
     total: number;
     status: string;
     notes?: string;
-    shareToken?: string;
+    publicToken: string;
 }
 
 export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -52,6 +52,11 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
             })
             .catch(() => setLoading(false));
     }, [id]);
+
+    const handleDownload = () => {
+        if (!invoice?.publicToken) return;
+        window.open(`/api/public/invoices/${invoice.publicToken}/download`, '_blank');
+    };
 
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this invoice? This cannot be undone.')) return;
@@ -143,7 +148,10 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                             Mark as Paid
                         </button>
                     )}
-                    <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl transition text-sm font-medium">
+                    <button 
+                        onClick={handleDownload}
+                        className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl transition text-sm font-medium"
+                    >
                         <Download className="w-4 h-4" /> Download PDF
                     </button>
                     <button
