@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ArrowLeft, Building2, Mail, Phone, MapPin, Globe, Loader2,
-    Trash2, Edit, Calendar, CheckSquare, FileText, Plus
+    Trash2, Edit, Calendar, CheckSquare, FileText, Plus, Circle
 } from 'lucide-react';
 
 interface Client {
@@ -23,22 +23,65 @@ interface Client {
     createdAt: string;
 }
 
+interface Project {
+    _id: string;
+    name: string;
+    status: string;
+    progress: number;
+    deadline?: string;
+    budget?: number;
+    currency: string;
+}
+
+interface Invoice {
+    _id: string;
+    invoiceNumber: string;
+    status: string;
+    total: number;
+    currency: string;
+    dueDate: string;
+    issueDate: string;
+}
+
+const PROJECT_STATUS_COLORS: Record<string, string> = {
+    draft: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+    active: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    'on-hold': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    completed: 'bg-green-500/20 text-green-400 border-green-500/30',
+    cancelled: 'bg-red-500/20 text-red-400 border-red-500/30',
+};
+
+const INVOICE_STATUS_COLORS: Record<string, string> = {
+    draft: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+    sent: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    viewed: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    paid: 'bg-green-500/20 text-green-400 border-green-500/30',
+    overdue: 'bg-red-500/20 text-red-400 border-red-500/30',
+    cancelled: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+};
+
 export default function ClientDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
     const { id } = use(params);
 
     const [client, setClient] = useState<Client | null>(null);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
-        fetch(`/api/clients/${id}`)
-            .then((res) => res.json())
-            .then((data) => {
-                if (data.client) setClient(data.client);
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
+        // Fetch client, projects, and invoices in parallel
+        Promise.all([
+            fetch(`/api/clients/${id}`).then(r => r.json()),
+            fetch(`/api/projects?clientId=${id}&limit=5`).then(r => r.json()),
+            fetch(`/api/invoices?clientId=${id}&limit=5`).then(r => r.json()),
+        ]).then(([clientData, projectsData, invoicesData]) => {
+            if (clientData.client) setClient(clientData.client);
+            setProjects(projectsData.projects || []);
+            setInvoices(invoicesData.invoices || []);
+            setLoading(false);
+        }).catch(() => setLoading(false));
     }, [id]);
 
     const handleDelete = async () => {
@@ -186,36 +229,125 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
 
                 {/* Right Column: Related Data (Projects, Invoices) */}
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Projects Quick View */}
+                    {/* Projects */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                <CheckSquare className="w-5 h-5 text-purple-400" /> Recent Projects
+                                <CheckSquare className="w-5 h-5 text-purple-400" />
+                                Recent Projects
+                                {projects.length > 0 && (
+                                    <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full">{projects.length}</span>
+                                )}
                             </h3>
                             <Link href={`/dashboard/projects/new?client=${client._id}`} className="text-sm text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1">
                                 <Plus className="w-4 h-4" /> New Project
                             </Link>
                         </div>
 
-                        <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
-                            <p className="text-slate-400 text-sm">No projects found for this client.</p>
-                        </div>
+                        {projects.length === 0 ? (
+                            <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
+                                <p className="text-slate-400 text-sm">No projects found for this client.</p>
+                                <Link href={`/dashboard/projects/new?client=${client._id}`} className="text-purple-400 hover:text-purple-300 text-sm mt-2 inline-block">
+                                    Create the first project →
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {projects.map(project => (
+                                    <Link
+                                        key={project._id}
+                                        href={`/dashboard/projects/${project._id}`}
+                                        className="flex items-center justify-between p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.07] rounded-xl transition group"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
+                                                <CheckSquare className="w-4 h-4 text-purple-400" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-white font-medium text-sm truncate group-hover:text-purple-300 transition">{project.name}</p>
+                                                {project.deadline && (
+                                                    <p className="text-slate-500 text-xs mt-0.5">Due {new Date(project.deadline).toLocaleDateString()}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 shrink-0">
+                                            {/* Progress bar */}
+                                            <div className="hidden sm:flex items-center gap-2">
+                                                <div className="w-20 h-1.5 rounded-full bg-white/10">
+                                                    <div
+                                                        className="h-1.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500"
+                                                        style={{ width: `${project.progress}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-xs text-slate-500">{project.progress}%</span>
+                                            </div>
+                                            <span className={`text-xs px-2 py-0.5 rounded capitalize border ${PROJECT_STATUS_COLORS[project.status] || 'bg-slate-500/20 text-slate-400 border-slate-500/30'}`}>
+                                                {project.status}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ))}
+                                <Link href={`/dashboard/projects?clientId=${client._id}`} className="text-center block text-sm text-purple-400 hover:text-purple-300 py-2 transition">
+                                    View all projects →
+                                </Link>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Invoices Quick View */}
+                    {/* Invoices */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                <FileText className="w-5 h-5 text-purple-400" /> Recent Invoices
+                                <FileText className="w-5 h-5 text-purple-400" />
+                                Recent Invoices
+                                {invoices.length > 0 && (
+                                    <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full">{invoices.length}</span>
+                                )}
                             </h3>
                             <Link href={`/dashboard/invoices/new?client=${client._id}`} className="text-sm text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1">
                                 <Plus className="w-4 h-4" /> New Invoice
                             </Link>
                         </div>
 
-                        <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
-                            <p className="text-slate-400 text-sm">No invoices found for this client.</p>
-                        </div>
+                        {invoices.length === 0 ? (
+                            <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
+                                <p className="text-slate-400 text-sm">No invoices found for this client.</p>
+                                <Link href={`/dashboard/invoices/new?client=${client._id}`} className="text-purple-400 hover:text-purple-300 text-sm mt-2 inline-block">
+                                    Create the first invoice →
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {invoices.map(invoice => (
+                                    <Link
+                                        key={invoice._id}
+                                        href={`/dashboard/invoices/${invoice._id}`}
+                                        className="flex items-center justify-between p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.07] rounded-xl transition group"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center shrink-0">
+                                                <FileText className="w-4 h-4 text-indigo-400" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-white font-medium text-sm group-hover:text-purple-300 transition">{invoice.invoiceNumber}</p>
+                                                <p className="text-slate-500 text-xs mt-0.5">Due {new Date(invoice.dueDate).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 shrink-0">
+                                            <p className="text-white font-semibold text-sm">
+                                                {invoice.currency} {invoice.total.toLocaleString()}
+                                            </p>
+                                            <span className={`text-xs px-2 py-0.5 rounded capitalize border ${INVOICE_STATUS_COLORS[invoice.status] || 'bg-slate-500/20 text-slate-400 border-slate-500/30'}`}>
+                                                {invoice.status}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ))}
+                                <Link href={`/dashboard/invoices?clientId=${client._id}`} className="text-center block text-sm text-purple-400 hover:text-purple-300 py-2 transition">
+                                    View all invoices →
+                                </Link>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

@@ -10,15 +10,22 @@ export async function GET(req: NextRequest) {
     const userId = (session.user as { id: string }).id;
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
+    const clientId = searchParams.get('clientId');
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
 
     await dbConnect();
     const query: Record<string, unknown> = { freelancerId: userId };
     if (status) query.status = status;
+    if (clientId) query.clientId = clientId;
 
-    const invoices = await Invoice.find(query)
+    let dbQuery = Invoice.find(query)
         .populate('clientId', 'name company email')
         .populate('projectId', 'name')
         .sort({ createdAt: -1 });
+
+    if (limit) dbQuery = dbQuery.limit(limit) as typeof dbQuery;
+
+    const invoices = await dbQuery;
 
     return NextResponse.json({ invoices });
 }
