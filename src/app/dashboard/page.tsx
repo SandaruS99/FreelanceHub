@@ -22,10 +22,10 @@ export default function DashboardPage() {
 
     useEffect(() => {
         Promise.all([
-            fetch('/api/clients?limit=1').then((r) => r.json()),
-            fetch('/api/projects').then((r) => r.json()),
-            fetch('/api/tasks').then((r) => r.json()),
-            fetch('/api/invoices').then((r) => r.json()),
+            fetch('/api/clients?limit=1', { cache: 'no-store' }).then((r) => r.json()),
+            fetch('/api/projects', { cache: 'no-store' }).then((r) => r.json()),
+            fetch('/api/tasks', { cache: 'no-store' }).then((r) => r.json()),
+            fetch('/api/invoices', { cache: 'no-store' }).then((r) => r.json()),
         ]).then(([c, p, t, i]) => {
             const invoices = i.invoices ?? [];
             setStats({
