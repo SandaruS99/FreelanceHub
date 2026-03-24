@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Loader2, Plus, Trash2, Calendar, FileText, Send, X } from 'lucide-react';
-import { useCurrency } from '@/lib/useCurrency';
 
 interface Client {
     _id: string;
@@ -24,7 +23,6 @@ function InvoiceForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const preSelectedClient = searchParams.get('client');
-    const { formatFull, currency: userCurrency, rates } = useCurrency();
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -34,7 +32,7 @@ function InvoiceForm() {
     const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null);
     const [sendingEmail, setSendingEmail] = useState(false);
 
-    // Default dates
+    // Default dates: issue today, due in 14 days
     const today = new Date().toISOString().split('T')[0];
     const twoWeeks = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -75,10 +73,7 @@ function InvoiceForm() {
         }
     };
 
-    // Current exchange rate for the user's currency (USD = 1)
-    const currentRate = rates[userCurrency] || 1;
-
-    // Calculations (in User's Selected Currency)
+    // Calculations
     const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
     const taxAmount = subtotal * (form.taxRate / 100);
     const total = subtotal + taxAmount - form.discount;
@@ -90,27 +85,23 @@ function InvoiceForm() {
             return;
         }
 
+        // Clean empty items
         const validItems = items.filter(i => i.description.trim() !== '');
         if (validItems.length === 0) {
-            setError('Please add at least one line item');
+            setError('Please add at least one line item with a description');
             return;
         }
 
         setLoading(true);
         setError('');
 
-        // CONVERSION ON SAVE: Convert from User Currency back to USD for DB
-        const toUSD = (amount: number) => amount / currentRate;
-
         const payload = {
             ...form,
-            discount: toUSD(form.discount),
-            currency: userCurrency,
             discountType: 'fixed',
             lineItems: validItems.map(i => ({
                 description: i.description,
                 quantity: i.quantity,
-                unitPrice: toUSD(i.rate), // Save as USD base
+                unitPrice: i.rate,
                 taxRate: form.taxRate,
             })),
         };
@@ -130,8 +121,12 @@ function InvoiceForm() {
             const data = await res.json();
             setCreatedInvoiceId(data.invoice._id);
             setShowSendModal(true);
-        } catch (err: any) {
-            setError(err.message || 'Error creating invoice');
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('An unknown error occurred');
+            }
         } finally {
             setLoading(false);
         }
@@ -141,26 +136,12 @@ function InvoiceForm() {
         if (!createdInvoiceId) return;
         setSendingEmail(true);
         try {
-            const res = await fetch(`/api/invoices/${createdInvoiceId}/send`, { method: 'POST' });
-            const data = await res.json();
-
-            // If WhatsApp, open it
-            if (data.whatsappUrl) {
-                window.open(data.whatsappUrl, '_blank');
-            }
-
-            if (res.ok) {
-                // Short delay to let them see it worked
-                setTimeout(() => {
-                    router.push('/dashboard/invoices');
-                    router.refresh();
-                }, 1000);
-            }
+            await fetch(`/api/invoices/${createdInvoiceId}/send`, { method: 'POST' });
         } catch (error) {
             console.error('Failed to send email:', error);
-            router.push('/dashboard/invoices');
         } finally {
-            setSendingEmail(false);
+            router.push('/dashboard/invoices');
+            router.refresh();
         }
     };
 
@@ -168,7 +149,6 @@ function InvoiceForm() {
         router.push('/dashboard/invoices');
         router.refresh();
     };
-
     return (
         <div className="max-w-4xl mx-auto pb-12">
             <div className="flex items-center justify-between mb-8">
@@ -181,7 +161,7 @@ function InvoiceForm() {
                     </Link>
                     <div>
                         <h1 className="text-2xl font-bold text-white">Create Invoice</h1>
-                        <p className="text-slate-400 text-sm mt-1">Draft a new invoice in {userCurrency}.</p>
+                        <p className="text-slate-400 text-sm mt-1">Draft a new invoice to send to your client.</p>
                     </div>
                 </div>
                 <button
@@ -202,6 +182,7 @@ function InvoiceForm() {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                {/* Main Builder Area */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                         <h2 className="text-lg font-semibold text-white mb-6 border-b border-white/5 pb-4">Invoice Details</h2>
@@ -219,8 +200,8 @@ function InvoiceForm() {
                                     {clients.map(c => <option key={c._id} value={c._id} className="bg-slate-800">{c.name} {c.company ? `(${c.company})` : ''}</option>)}
                                 </select>
                             </div>
-                            <div className="flex items-end text-sm text-slate-400 pb-2">
-                                <p>Invoice currency: <span className="text-purple-400 font-bold">{userCurrency}</span></p>
+                            <div className="flex items-end text-sm text-slate-400">
+                                <p>Invoice numbers are generated automatically (e.g., INV-001).</p>
                             </div>
                         </div>
 
@@ -257,21 +238,22 @@ function InvoiceForm() {
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                         <h2 className="text-lg font-semibold text-white mb-6 border-b border-white/5 pb-4">Line Items</h2>
 
+                        {/* Table Header */}
                         <div className="hidden sm:grid grid-cols-12 gap-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">
                             <div className="col-span-6">Description</div>
                             <div className="col-span-2 text-right">Qty</div>
-                            <div className="col-span-3 text-right">Rate ({userCurrency})</div>
+                            <div className="col-span-3 text-right">Rate / Price</div>
                             <div className="col-span-1"></div>
                         </div>
 
                         <div className="space-y-3 mb-4">
-                            {items.map((item) => (
+                            {items.map((item, index) => (
                                 <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 items-center bg-white/[0.02] p-3 sm:p-2 sm:bg-transparent rounded-xl border border-white/5 sm:border-transparent">
                                     <div className="sm:col-span-6">
                                         <label className="sm:hidden block text-xs font-medium text-slate-400 mb-1">Description</label>
                                         <input
                                             type="text"
-                                            placeholder="e.g., Development Work"
+                                            placeholder="e.g., UI/UX Design (Homepage)"
                                             value={item.description}
                                             onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                                             className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
@@ -279,6 +261,7 @@ function InvoiceForm() {
                                     </div>
                                     <div className="grid grid-cols-2 sm:col-span-5 gap-3 sm:gap-4">
                                         <div>
+                                            <label className="sm:hidden block text-xs font-medium text-slate-400 mb-1">Quantity</label>
                                             <input
                                                 type="number"
                                                 min="1"
@@ -289,6 +272,7 @@ function InvoiceForm() {
                                             />
                                         </div>
                                         <div>
+                                            <label className="sm:hidden block text-xs font-medium text-slate-400 mb-1">Rate ($)</label>
                                             <input
                                                 type="number"
                                                 min="0"
@@ -300,12 +284,12 @@ function InvoiceForm() {
                                             />
                                         </div>
                                     </div>
-                                    <div className="sm:col-span-1 flex justify-end">
+                                    <div className="sm:col-span-1 flex justify-end sm:justify-center">
                                         <button
                                             type="button"
                                             onClick={() => removeItem(item.id)}
                                             disabled={items.length === 1}
-                                            className="p-2 text-slate-500 hover:text-red-400 transition disabled:opacity-20"
+                                            className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -330,41 +314,46 @@ function InvoiceForm() {
                                     value={form.notes}
                                     onChange={(e) => updateForm('notes', e.target.value)}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
+                                    placeholder="Payment instructions or thank you note..."
                                 />
                             </div>
 
+                            {/* Totals Box */}
                             <div className="bg-slate-900 rounded-xl p-5 border border-white/5">
                                 <div className="flex justify-between items-center mb-3 text-sm">
                                     <span className="text-slate-400">Subtotal</span>
-                                    <span className="text-white">{formatFull(subtotal)}</span>
+                                    <span className="text-white">${subtotal.toFixed(2)}</span>
                                 </div>
 
-                                <div className="flex justify-between items-center mb-3 text-sm">
-                                    <span className="text-slate-400 text-xs">Tax ({form.taxRate}%)</span>
+                                <div className="flex justify-between items-center mb-3 text-sm group">
+                                    <span className="text-slate-400 flex items-center gap-2">
+                                        Tax (%)
+                                    </span>
                                     <input
                                         type="number"
                                         min="0"
+                                        max="100"
                                         value={form.taxRate}
                                         onChange={(e) => updateForm('taxRate', parseFloat(e.target.value) || 0)}
-                                        className="w-16 text-right bg-white/5 border border-white/10 rounded px-2 py-1 text-white text-xs"
+                                        className="w-20 text-right bg-white/5 border border-white/10 rounded px-2 py-1 text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                                     />
                                 </div>
 
                                 <div className="flex justify-between items-center mb-4 text-sm">
-                                    <span className="text-slate-400 text-xs">Discount ({userCurrency})</span>
+                                    <span className="text-slate-400">Discount ($)</span>
                                     <input
                                         type="number"
                                         min="0"
                                         value={form.discount}
                                         onChange={(e) => updateForm('discount', parseFloat(e.target.value) || 0)}
-                                        className="w-24 text-right bg-white/5 border border-white/10 rounded px-2 py-1 text-white text-xs"
+                                        className="w-24 text-right bg-white/5 border border-white/10 rounded px-2 py-1 text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                                     />
                                 </div>
 
                                 <div className="flex justify-between items-center pt-3 border-t border-white/10">
-                                    <span className="text-base font-semibold text-white">Total</span>
+                                    <span className="text-base font-semibold text-white">Total Amount</span>
                                     <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
-                                        {formatFull(Math.max(0, total))}
+                                        ${Math.max(0, total).toFixed(2)}
                                     </span>
                                 </div>
                             </div>
@@ -372,9 +361,11 @@ function InvoiceForm() {
                     </div>
                 </div>
 
+                {/* Sidebar */}
                 <div className="space-y-6">
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sticky top-24">
                         <h2 className="text-lg font-semibold text-white mb-6 border-b border-white/5 pb-4">Settings</h2>
+
                         <div className="space-y-5">
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Initial Status</label>
@@ -383,11 +374,15 @@ function InvoiceForm() {
                                     onChange={(e) => updateForm('status', e.target.value)}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
                                 >
-                                    <option value="draft" className="bg-slate-800">Draft</option>
-                                    <option value="sent" className="bg-slate-800">Sent</option>
-                                    <option value="paid" className="bg-slate-800">Paid</option>
+                                    <option value="draft" className="bg-slate-800">Draft (Not Sent)</option>
+                                    <option value="sent" className="bg-slate-800">Sent to Client</option>
+                                    <option value="paid" className="bg-slate-800">Already Paid</option>
                                 </select>
+                                <p className="text-xs text-slate-500 mt-2">
+                                    Draft invoices do not count towards revenue until sent or paid.
+                                </p>
                             </div>
+
                             <div className="pt-4 border-t border-white/5 text-center">
                                 <FileText className="w-8 h-8 text-slate-600 mx-auto mb-3" />
                                 <p className="text-sm text-slate-400">
@@ -402,8 +397,13 @@ function InvoiceForm() {
             {/* Send Invoice Modal */}
             {showSendModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-                    <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-center">
-                        <button onClick={handleSkipEmail} className="absolute right-4 top-4 text-slate-500 hover:text-white"><X className="w-5 h-5" /></button>
+                    <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+                        <button
+                            onClick={handleSkipEmail}
+                            className="absolute right-4 top-4 text-slate-500 hover:text-white transition"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
 
                         <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-5 mx-auto">
                             <Send className="w-6 h-6 text-green-400" />

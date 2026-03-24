@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, FileText, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, FileText } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
 
 interface LineItem {
@@ -66,23 +66,6 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
         await fetch(`/api/invoices/${id}`, { method: 'DELETE' });
         router.push('/dashboard/invoices');
         router.refresh();
-    };
-
-    const sendInvoice = async () => {
-        if (!invoice) return;
-        setUpdating(true);
-        try {
-            const res = await fetch(`/api/invoices/${id}/send`, { method: 'POST' });
-            const data = await res.json();
-            if (data.invoice) setInvoice(data.invoice);
-
-            // If WhatsApp URL returned, open it
-            if (data.whatsappUrl) {
-                window.open(data.whatsappUrl, '_blank');
-            }
-        } finally {
-            setUpdating(false);
-        }
     };
 
     const updateStatus = async (newStatus: string) => {
@@ -149,19 +132,19 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                 <div className="flex flex-wrap items-center gap-3">
                     {invoice.status === 'draft' && (
                         <button
-                            onClick={sendInvoice}
+                            onClick={() => updateStatus('sent')}
                             disabled={updating}
-                            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl transition text-sm font-medium shadow-lg shadow-blue-500/20"
+                            className="flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 px-4 py-2 rounded-xl transition text-sm font-medium"
                         >
                             {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                            Send Invoice (Email & WA)
+                            Mark as Sent
                         </button>
                     )}
                     {(invoice.status === 'sent' || invoice.status === 'overdue') && (
                         <button
                             onClick={() => updateStatus('paid')}
                             disabled={updating}
-                            className="flex items-center gap-2 bg-green-500/10 hover:bg-green-500/20 border border-green-200/20 text-green-400 px-4 py-2 rounded-xl transition text-sm font-medium"
+                            className="flex items-center gap-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 px-4 py-2 rounded-xl transition text-sm font-medium"
                         >
                             {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                             Mark as Paid
