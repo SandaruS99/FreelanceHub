@@ -11,16 +11,16 @@ export async function GET() {
             return NextResponse.json({ base: 'USD', rates: cachedRates });
         }
 
-        // Frankfurter API - no API key needed, returns rates based on USD
-        const res = await fetch('https://api.frankfurter.app/latest?from=USD', {
-            next: { revalidate: 3600 } // Next.js cache for 1hr
-        });
+        // ExchangeRate-API (Free) - supports 160+ currencies including LKR
+        // v4 is free and doesn't require an API key for a simple latest request
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
 
         if (!res.ok) throw new Error('Failed to fetch exchange rates');
 
         const data = await res.json();
-        // Frankfurter doesn't include USD itself; add it
-        const rates: Record<string, number> = { USD: 1, ...data.rates };
+        const rates = data.rates;
+
+        if (!rates) throw new Error('Invalid data from exchange rate API');
 
         cachedRates = rates;
         cacheTime = now;
@@ -34,7 +34,9 @@ export async function GET() {
             MXN: 17.1, SGD: 1.34, HKD: 7.82, SEK: 10.4, NOK: 10.5,
             NZD: 1.63, KRW: 1325, TRY: 32.1, ZAR: 18.7, AED: 3.67,
             SAR: 3.75, QAR: 3.64, KWD: 0.31, BHD: 0.38, OMR: 0.38,
+            LKR: 310, // Added LKR to fallback just in case
         };
         return NextResponse.json({ base: 'USD', rates: fallback, fallback: true });
     }
 }
+

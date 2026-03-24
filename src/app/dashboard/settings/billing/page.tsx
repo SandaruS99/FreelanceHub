@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Check, Zap, Building, Loader2 } from 'lucide-react';
+import { useCurrency } from '@/lib/useCurrency';
 
 export default function BillingPage() {
     const { data: session, update } = useSession();
-    const userRole = (session?.user as any)?.role;
+    const { format } = useCurrency();
     const currentPlan = (session?.user as any)?.plan || 'free';
 
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -45,7 +46,8 @@ export default function BillingPage() {
         {
             id: 'free',
             name: 'Free',
-            price: '$0',
+            priceUSD: 0,
+            hasMonthly: false,
             description: 'Perfect for getting started.',
             features: ['Up to 5 clients', 'Basic invoicing', 'Standard reporting'],
             icon: <Check className="w-5 h-5 text-slate-400" />,
@@ -54,7 +56,8 @@ export default function BillingPage() {
         {
             id: 'pro',
             name: 'Pro',
-            price: '$9.99/mo',
+            priceUSD: 9.99,
+            hasMonthly: true,
             description: 'For growing freelancers.',
             features: ['Unlimited clients', 'Advanced tax tracking', 'Custom PDF design', 'Priority support'],
             icon: <Zap className="w-5 h-5 text-purple-400" />,
@@ -63,7 +66,8 @@ export default function BillingPage() {
         {
             id: 'business',
             name: 'Business',
-            price: '$29.99/mo',
+            priceUSD: 29.99,
+            hasMonthly: true,
             description: 'For agencies and teams.',
             features: ['Everything in Pro', 'Team accounts', 'API Access', 'White-labeling'],
             icon: <Building className="w-5 h-5 text-indigo-400" />,
@@ -82,8 +86,8 @@ export default function BillingPage() {
 
             {message && (
                 <div className={`p-4 rounded-xl border flex items-center gap-3 text-sm ${message.type === 'success'
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                        : 'bg-red-500/10 border-red-500/20 text-red-400'
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                    : 'bg-red-500/10 border-red-500/20 text-red-400'
                     }`}>
                     {message.text}
                 </div>
@@ -98,8 +102,8 @@ export default function BillingPage() {
                         <div
                             key={plan.id}
                             className={`relative bg-slate-900 rounded-3xl p-8 border flex flex-col ${isPopular
-                                    ? 'border-purple-500 ring-1 ring-purple-500/50 shadow-2xl shadow-purple-500/10 scale-105 z-10'
-                                    : 'border-white/10 hover:border-white/20 transition-colors'
+                                ? 'border-purple-500 ring-1 ring-purple-500/50 shadow-2xl shadow-purple-500/10 scale-105 z-10'
+                                : 'border-white/10 hover:border-white/20 transition-colors'
                                 }`}
                         >
                             {isPopular && (
@@ -120,15 +124,15 @@ export default function BillingPage() {
                             <p className="text-slate-400 text-sm mb-6 h-10">{plan.description}</p>
 
                             <div className="mb-6 flex items-end gap-1">
-                                <span className="text-4xl font-black text-white">{plan.price.split('/')[0]}</span>
-                                {plan.price.includes('/') && (
+                                <span className="text-4xl font-black text-white">{format(plan.priceUSD, { decimals: plan.priceUSD % 1 === 0 ? 0 : 2 })}</span>
+                                {plan.hasMonthly && (
                                     <span className="text-slate-500 mb-1 font-medium">/mo</span>
                                 )}
                             </div>
 
                             <div className="space-y-4 mb-8 flex-1">
                                 {plan.features.map((feature, i) => (
-                                    <div key={i} className="flex items-start gap-3">
+                                    <div key={i} className="flex items-start gap-4">
                                         <div className="mt-1 shrink-0 w-4 h-4 rounded-full bg-white/10 flex items-center justify-center">
                                             <Check className="w-2.5 h-2.5 text-slate-300" />
                                         </div>
@@ -141,10 +145,10 @@ export default function BillingPage() {
                                 onClick={() => handleUpgrade(plan.id)}
                                 disabled={isCurrentPlan || loadingPlan !== null}
                                 className={`w-full py-3 rounded-xl font-medium text-sm transition-all flex justify-center items-center gap-2 ${isCurrentPlan
-                                        ? 'bg-white/5 text-slate-500 border border-white/10 cursor-not-allowed'
-                                        : isPopular
-                                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/25'
-                                            : 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
+                                    ? 'bg-white/5 text-slate-500 border border-white/10 cursor-not-allowed'
+                                    : isPopular
+                                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/25'
+                                        : 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
                                     }`}
                             >
                                 {loadingPlan === plan.id ? (
