@@ -31,7 +31,7 @@ export default function LoginPage() {
             if (result.error === 'PENDING_APPROVAL') {
                 router.push('/auth/pending');
             } else if (result.error === 'ACCOUNT_SUSPENDED') {
-                router.push('/auth/suspended');
+                setError('Your account has been suspended. Please contact the administrator.');
             } else {
                 setError('Invalid email or password. Please try again.');
             }
