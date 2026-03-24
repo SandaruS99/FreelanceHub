@@ -9,8 +9,6 @@ import {
     TrendingUp, DollarSign, Briefcase, CheckCircle, Download, 
     Calendar, Filter, FileText, ChevronRight, Loader2, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1'];
@@ -44,6 +42,10 @@ export default function ReportsPage() {
         if (!reportRef.current) return;
         setIsExporting(true);
         try {
+            // Dynamically import to avoid SSR issues
+            const html2canvas = (await import('html2canvas')).default;
+            const { jsPDF } = await import('jspdf');
+
             const canvas = await html2canvas(reportRef.current, {
                 scale: 2,
                 useCORS: true,

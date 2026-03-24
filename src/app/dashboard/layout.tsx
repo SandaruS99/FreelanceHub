@@ -7,7 +7,7 @@ import { signOut, useSession } from 'next-auth/react';
 import {
     LayoutDashboard, Users, FolderKanban, CheckSquare, FileText, BarChart2,
     Settings, LogOut, Briefcase, Menu, X, Bell, ChevronDown, MessageSquare,
-    Calendar
+    Calendar as CalendarIcon
 } from 'lucide-react';
 
 const navItems = [
@@ -16,7 +16,7 @@ const navItems = [
     { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
     { href: '/dashboard/tasks', label: 'Tasks', icon: CheckSquare },
     { href: '/dashboard/invoices', label: 'Invoices', icon: FileText },
-    { href: '/dashboard/calendar', label: 'Calendar', icon: Calendar },
+    { href: '/dashboard/calendar', label: 'Calendar', icon: CalendarIcon },
     { href: '/dashboard/crm', label: 'CRM Log', icon: MessageSquare },
     { href: '/dashboard/reports', label: 'Reports', icon: BarChart2 },
 ];
