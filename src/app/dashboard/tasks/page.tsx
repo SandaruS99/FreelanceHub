@@ -75,7 +75,7 @@ export default function TasksPage() {
     };
 
     return (
-        <div className="max-w-screen-2xl mx-auto pb-12">
+        <div className="w-full pb-12 overflow-x-hidden">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
@@ -96,10 +96,10 @@ export default function TasksPage() {
                     <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
                 </div>
             ) : (
-                <div className="relative">
-                    {/* Horizontal Scroll Container */}
-                    <div className="overflow-x-auto pb-6 -mx-4 px-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                        <div className="flex gap-6 min-w-full lg:min-w-0" style={{ width: 'max-content' }}>
+                <div className="w-full">
+                    {/* Horizontal Scroll Container - isolated to board only */}
+                    <div className="overflow-x-auto pb-8 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent rounded-2xl">
+                        <div className="flex gap-6 pb-2" style={{ width: 'max-content' }}>
                             {columns.map((col) => (
                                 <div 
                                     key={col.id} 
