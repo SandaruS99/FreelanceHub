@@ -14,10 +14,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params;
 
     await dbConnect();
-    const invoice = await Invoice.findOne({ _id: id, freelancerId: userId }).populate('clientId', 'name email');
+    const invoice = await Invoice.findOne({ _id: id, freelancerId: userId }).populate('clientId', 'name email phone');
 
     if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     if (!invoice.clientId?.email) return NextResponse.json({ error: 'Client has no email address' }, { status: 400 });
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const paymentLink = `${appUrl}/preview/invoice/${invoice.publicToken}/pay`;
+
+    // Generate WhatsApp link if phone exists
+    let whatsappUrl = null;
+    if (invoice.clientId?.phone) {
+        const message = `Hello ${invoice.clientId.name}, here is your invoice #${invoice.invoiceNumber} from ${session.user.name || 'Freelancer'}. \n\nTotal: $${(invoice.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}\n\nYou can pay securely here: ${paymentLink}\n\nThank you!`;
+        const encodedMessage = encodeURIComponent(message);
+        const cleanPhone = invoice.clientId.phone.replace(/\D/g, ''); // Remove non-digits
+        whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+    }
 
     try {
         // Only send if we have a real key, otherwise mock success locally
@@ -134,7 +146,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         invoice.sentAt = new Date();
         await invoice.save();
 
-        return NextResponse.json({ success: true, message: 'Invoice sent successfully', invoice });
+        return NextResponse.json({
+            success: true,
+            message: 'Invoice sent successfully',
+            invoice,
+            whatsappUrl // Return to frontend to open in new tab
+        });
     } catch (error) {
         console.error('Email error:', error);
         return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });

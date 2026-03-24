@@ -68,6 +68,23 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
         router.refresh();
     };
 
+    const sendInvoice = async () => {
+        if (!invoice) return;
+        setUpdating(true);
+        try {
+            const res = await fetch(`/api/invoices/${id}/send`, { method: 'POST' });
+            const data = await res.json();
+            if (data.invoice) setInvoice(data.invoice);
+
+            // If WhatsApp URL returned, open it
+            if (data.whatsappUrl) {
+                window.open(data.whatsappUrl, '_blank');
+            }
+        } finally {
+            setUpdating(false);
+        }
+    };
+
     const updateStatus = async (newStatus: string) => {
         if (!invoice) return;
         setUpdating(true);
@@ -132,12 +149,12 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                 <div className="flex flex-wrap items-center gap-3">
                     {invoice.status === 'draft' && (
                         <button
-                            onClick={() => updateStatus('sent')}
+                            onClick={sendInvoice}
                             disabled={updating}
-                            className="flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 px-4 py-2 rounded-xl transition text-sm font-medium"
+                            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl transition text-sm font-medium shadow-lg shadow-blue-500/20"
                         >
                             {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                            Mark as Sent
+                            Send Invoice (Email & WA)
                         </button>
                     )}
                     {(invoice.status === 'sent' || invoice.status === 'overdue') && (
