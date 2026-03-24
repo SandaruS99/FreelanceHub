@@ -174,7 +174,7 @@ export default function TasksPage() {
 
                                                 <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/5">
                                                     <div className="flex items-center gap-2">
-                                                        <Info className="w-3.5 h-3.5 text-slate-600" title="Task Info" />
+                                                        <Info className="w-3.5 h-3.5 text-slate-600" />
                                                         {task.dueDate ? (
                                                             <div className={`flex items-center gap-1.5 text-[10px] ${new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-red-400' : 'text-slate-500'}`}>
                                                                 <Calendar className="w-3 h-3" />
