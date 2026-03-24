@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import {
-    LayoutDashboard, Users, Settings, LogOut, Briefcase, Menu, X, Bell, ChevronDown
+    LayoutDashboard, Users, Settings, LogOut, Briefcase, Menu, X, ChevronDown, Bell
 } from 'lucide-react';
+import NotificationsDropdown from '@/components/NotificationsDropdown';
 
 const navItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/freelancers', label: 'Freelancers', icon: Users },
+    { href: '/admin/notifications', label: 'Notifications', icon: Bell },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -44,8 +46,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 href={href}
                                 onClick={() => setSidebarOpen(false)}
                                 className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${active
-                                        ? 'bg-purple-600/20 text-purple-300 border border-purple-500/20'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    ? 'bg-purple-600/20 text-purple-300 border border-purple-500/20'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 <Icon className="w-4 h-4" />
@@ -81,9 +83,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </button>
                     <div className="flex-1 lg:flex-none" />
                     <div className="flex items-center gap-3">
-                        <button className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition">
-                            <Bell className="w-4 h-4" />
-                        </button>
+                        <NotificationsDropdown />
                         <div className="relative">
                             <button
                                 onClick={() => setUserMenuOpen(!userMenuOpen)}

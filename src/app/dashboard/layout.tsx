@@ -6,9 +6,10 @@ import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import {
     LayoutDashboard, Users, FolderKanban, CheckSquare, FileText, BarChart2,
-    Settings, LogOut, Briefcase, Menu, X, Bell, ChevronDown, MessageSquare,
+    Settings, LogOut, Briefcase, Menu, X, ChevronDown, MessageSquare,
     CalendarDays
 } from 'lucide-react';
+import NotificationsDropdown from '@/components/NotificationsDropdown';
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -65,8 +66,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 href={href}
                                 onClick={() => setSidebarOpen(false)}
                                 className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${active
-                                        ? 'bg-purple-600/20 text-purple-300 border border-purple-500/20'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    ? 'bg-purple-600/20 text-purple-300 border border-purple-500/20'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 <Icon className="w-4 h-4 shrink-0" />
@@ -106,9 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </button>
                     <div className="flex-1" />
                     <div className="flex items-center gap-3">
-                        <button className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition">
-                            <Bell className="w-4 h-4" />
-                        </button>
+                        <NotificationsDropdown />
                         <div className="relative">
                             <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/5 transition">
                                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">{initials}</div>
