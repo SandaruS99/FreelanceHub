@@ -96,71 +96,90 @@ export default function TasksPage() {
                     <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
                 </div>
             ) : (
-                <div className="flex flex-col lg:flex-row gap-6 overflow-x-auto pb-4">
-                    {columns.map((col) => (
-                        <div key={col.id} className="flex-1 min-w-[300px] bg-white/5 border border-white/10 rounded-2xl flex flex-col h-[calc(100vh-220px)] overflow-hidden">
-                            <div className={`p-4 border-b-2 bg-white/[0.02] flex items-center justify-between ${col.color}`}>
-                                <h3 className="font-semibold text-white">{col.title}</h3>
-                                <span className="text-xs font-bold text-slate-400 bg-white/10 px-2 py-0.5 rounded-full">
-                                    {groupedTasks[col.id].length}
-                                </span>
-                            </div>
-
-                            <div className="p-4 flex-1 overflow-y-auto space-y-4">
-                                {groupedTasks[col.id].map((task) => (
-                                    <div
-                                        key={task._id}
-                                        className="bg-slate-900 border border-white/10 hover:border-purple-500/50 rounded-xl p-4 cursor-pointer group transition"
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${priorityColors[task.priority]}`}>
-                                                {task.priority}
-                                            </span>
-                                            {/* Simple status mover for UI since HTML Drag/Drop API requires more setup */}
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <select
-                                                    value={task.status}
-                                                    onChange={(e) => updateTaskStatus(task._id, e.target.value as Task['status'])}
-                                                    className="text-xs bg-slate-800 text-slate-300 border border-slate-700 rounded px-1 py-0.5 outline-none"
-                                                >
-                                                    <option value="todo">To Do</option>
-                                                    <option value="in-progress">In Progress</option>
-                                                    <option value="review">Review</option>
-                                                    <option value="done">Done</option>
-                                                </select>
-                                            </div>
+                <div className="relative">
+                    {/* Horizontal Scroll Container */}
+                    <div className="overflow-x-auto pb-6 -mx-4 px-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                        <div className="flex gap-6 min-w-full lg:min-w-0" style={{ width: 'max-content' }}>
+                            {columns.map((col) => (
+                                <div 
+                                    key={col.id} 
+                                    className="w-[320px] bg-white/5 border border-white/10 rounded-2xl flex flex-col h-[calc(100vh-240px)] min-h-[500px] overflow-hidden transition-all duration-300"
+                                >
+                                    {/* Column Header */}
+                                    <div className={`p-4 border-b-2 bg-white/[0.02] flex items-center justify-between ${col.color}`}>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${col.id === 'todo' ? 'bg-slate-500' : col.id === 'in-progress' ? 'bg-blue-500' : col.id === 'review' ? 'bg-amber-500' : 'bg-green-500'}`} />
+                                            <h3 className="font-semibold text-white text-sm">{col.title}</h3>
                                         </div>
+                                        <span className="text-[10px] font-bold text-slate-400 bg-white/10 px-2 py-0.5 rounded-full">
+                                            {groupedTasks[col.id].length}
+                                        </span>
+                                    </div>
 
-                                        <h4 className="text-white font-medium text-sm mb-3 leading-snug">{task.title}</h4>
+                                    {/* Tasks List */}
+                                    <div className="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                                        {groupedTasks[col.id].map((task) => (
+                                            <div
+                                                key={task._id}
+                                                className="bg-slate-900/50 backdrop-blur-sm border border-white/10 hover:border-purple-500/50 rounded-xl p-4 cursor-pointer group transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5"
+                                            >
+                                                <div className="flex justify-between items-start mb-2.5">
+                                                    <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded border tracking-wider ${priorityColors[task.priority]}`}>
+                                                        {task.priority}
+                                                    </span>
+                                                    <div className="flex items-center gap-1 opacity-10 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <select
+                                                            value={task.status}
+                                                            onChange={(e) => updateTaskStatus(task._id, e.target.value as Task['status'])}
+                                                            className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-purple-500/50"
+                                                        >
+                                                            <option value="todo">To Do</option>
+                                                            <option value="in-progress">In Progress</option>
+                                                            <option value="review">Review</option>
+                                                            <option value="done">Done</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
 
-                                        {(task.projectId || task.clientId) && (
-                                            <div className="mb-3">
-                                                <p className="text-xs text-slate-400 truncate">
-                                                    {task.projectId?.name || task.clientId?.name}
-                                                </p>
-                                            </div>
-                                        )}
+                                                <h4 className="text-white font-medium text-sm mb-3 leading-snug group-hover:text-purple-300 transition-colors">{task.title}</h4>
 
-                                        {task.dueDate && (
-                                            <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                                                <Calendar className="w-3.5 h-3.5" />
-                                                <span>{new Date(task.dueDate).toLocaleDateString()}</span>
-                                                {new Date(task.dueDate) < new Date() && task.status !== 'done' && (
-                                                    <AlertCircle className="w-3.5 h-3.5 text-red-500 ml-auto" />
+                                                {task.projectId && (
+                                                    <div className="mb-3 flex items-center gap-1.5">
+                                                        <div className="w-1 h-3 bg-purple-500/50 rounded-full" />
+                                                        <p className="text-[11px] text-slate-400 truncate max-w-[180px]">
+                                                            {task.projectId.name}
+                                                        </p>
+                                                    </div>
                                                 )}
+
+                                                <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/5">
+                                                    {task.dueDate ? (
+                                                        <div className={`flex items-center gap-1.5 text-[10px] ${new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-red-400' : 'text-slate-500'}`}>
+                                                            <Calendar className="w-3 h-3" />
+                                                            <span>{new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                                        </div>
+                                                    ) : <div />}
+                                                    
+                                                    {task.clientId && !task.projectId && (
+                                                        <span className="text-[10px] text-slate-500 italic truncate max-w-[100px]">
+                                                            {task.clientId.name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {groupedTasks[col.id].length === 0 && (
+                                            <div className="flex flex-col items-center justify-center py-10 border border-dashed border-white/5 rounded-xl text-slate-600 text-xs">
+                                                <AlertCircle className="w-4 h-4 mb-2 opacity-20" />
+                                                No tasks
                                             </div>
                                         )}
                                     </div>
-                                ))}
-
-                                {groupedTasks[col.id].length === 0 && (
-                                    <div className="text-center py-6 border border-dashed border-white/10 rounded-xl text-slate-500 text-sm">
-                                        No tasks
-                                    </div>
-                                )}
-                            </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    </div>
                 </div>
             )}
         </div>

@@ -3,11 +3,16 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Calendar, Loader2, DollarSign, AlignLeft } from 'lucide-react';
+import { ArrowLeft, Save, Calendar, Loader2, DollarSign, AlignLeft, Plus, Trash2, ListChecks } from 'lucide-react';
 
 interface Client {
     _id: string;
     name: string;
+}
+
+interface TaskForm {
+    title: string;
+    priority: 'low' | 'medium' | 'high' | 'urgent';
 }
 
 function ProjectForm() {
@@ -31,6 +36,10 @@ function ProjectForm() {
         progress: 0,
     });
 
+    const [tasks, setTasks] = useState<TaskForm[]>([
+        { title: '', priority: 'medium' }
+    ]);
+
     useEffect(() => {
         fetch('/api/clients')
             .then((res) => res.json())
@@ -40,15 +49,27 @@ function ProjectForm() {
 
     const update = (key: string, value: string | number) => setForm((f) => ({ ...f, [key]: value }));
 
+    const addTask = () => setTasks([...tasks, { title: '', priority: 'medium' }]);
+    const removeTask = (index: number) => setTasks(tasks.filter((_, i) => i !== index));
+    const updateTask = (index: number, key: keyof TaskForm, value: string) => {
+        const newTasks = [...tasks];
+        newTasks[index] = { ...newTasks[index], [key]: value };
+        setTasks(newTasks);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
+        // Filter out empty tasks
+        const validTasks = tasks.filter(t => t.title.trim() !== '');
+
         // Format budget to number if provided
         const payload = {
             ...form,
             budget: form.budget ? Number(form.budget) : undefined,
+            tasks: validTasks
         };
 
         try {
@@ -108,7 +129,7 @@ function ProjectForm() {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                         <h2 className="text-lg font-semibold text-white mb-6 border-b border-white/5 pb-4">Project Details</h2>
@@ -170,6 +191,60 @@ function ProjectForm() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Tasks Section */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                        <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+                            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                                <ListChecks className="w-5 h-5 text-purple-400" />
+                                Initial Tasks
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={addTask}
+                                className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 transition"
+                            >
+                                <Plus className="w-4 h-4" /> Add Task
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {tasks.map((task, index) => (
+                                <div key={index} className="flex gap-3 group">
+                                    <div className="flex-1">
+                                        <input
+                                            type="text"
+                                            value={task.title}
+                                            onChange={(e) => updateTask(index, 'title', e.target.value)}
+                                            placeholder="Task title (e.g. Setting up project structure)"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
+                                        />
+                                    </div>
+                                    <select
+                                        value={task.priority}
+                                        onChange={(e) => updateTask(index, 'priority', e.target.value)}
+                                        className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 transition outline-none"
+                                    >
+                                        <option value="low" className="bg-slate-800">Low</option>
+                                        <option value="medium" className="bg-slate-800">Medium</option>
+                                        <option value="high" className="bg-slate-800">High</option>
+                                        <option value="urgent" className="bg-slate-800">Urgent</option>
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeTask(index)}
+                                        disabled={tasks.length === 1 && index === 0}
+                                        className="p-2 text-slate-500 hover:text-red-400 transition disabled:opacity-0"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-4 italic">
+                            These tasks will appear automatically in your Tasks Kanban board.
+                        </p>
                     </div>
                 </div>
 
@@ -248,7 +323,7 @@ function ProjectForm() {
                         </div>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
     );
 }

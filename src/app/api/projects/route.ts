@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Project from '@/models/Project';
+import Task from '@/models/Task';
 import { auth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -30,14 +31,26 @@ export async function POST(req: NextRequest) {
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const userId = (session.user as { id: string }).id;
-    const data = await req.json();
+    const { tasks, ...projectData } = await req.json();
 
     await dbConnect();
 
+    // Create the project
     const project = await Project.create({
-        ...data,
+        ...projectData,
         freelancerId: userId
     });
+
+    // Create tasks if provided
+    if (tasks && Array.isArray(tasks) && tasks.length > 0) {
+        const tasksToCreate = tasks.map(task => ({
+            ...task,
+            freelancerId: userId,
+            projectId: project._id,
+            clientId: projectData.clientId // Link to the same client
+        }));
+        await Task.insertMany(tasksToCreate);
+    }
 
     return NextResponse.json({ project }, { status: 201 });
 }
