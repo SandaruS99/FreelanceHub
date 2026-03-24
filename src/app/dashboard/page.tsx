@@ -21,25 +21,13 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        Promise.all([
-            fetch('/api/clients?limit=1', { cache: 'no-store' }).then((r) => r.json()),
-            fetch('/api/projects', { cache: 'no-store' }).then((r) => r.json()),
-            fetch('/api/tasks', { cache: 'no-store' }).then((r) => r.json()),
-            fetch('/api/invoices', { cache: 'no-store' }).then((r) => r.json()),
-        ]).then(([c, p, t, i]) => {
-            const invoices = i.invoices ?? [];
-            setStats({
-                clients: c.total ?? 0,
-                projects: (p.projects ?? []).length,
-                tasks: (t.tasks ?? []).filter((task: { status: string }) => task.status !== 'done').length,
-                invoices: {
-                    total: invoices.length,
-                    pending: invoices.filter((inv: { status: string }) => ['sent', 'viewed', 'overdue'].includes(inv.status)).length,
-                    paid: invoices.filter((inv: { status: string }) => inv.status === 'paid').length,
-                },
-            });
-            setLoading(false);
-        }).catch(() => setLoading(false));
+        fetch('/api/dashboard/stats', { cache: 'no-store' })
+            .then((r) => r.json())
+            .then((data) => {
+                setStats(data);
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
     }, []);
 
     const hour = new Date().getHours();
