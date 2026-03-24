@@ -25,7 +25,7 @@ const navItems = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { data: session } = useSession();
-    const user = session?.user as { name?: string; email?: string } | undefined;
+    const user = session?.user as { name?: string; email?: string; plan?: string } | undefined;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -45,13 +45,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 {/* Profile mini */}
                 <div className="px-4 py-3 border-b border-white/5">
-                    <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5">
+                    <div className="relative flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
                             {initials}
                         </div>
-                        <div className="min-w-0">
-                            <p className="text-white text-sm font-medium truncate">{user?.name ?? 'Freelancer'}</p>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-white text-sm font-medium truncate pr-12">{user?.name ?? 'Freelancer'}</p>
                             <p className="text-slate-400 text-xs truncate">{user?.email ?? ''}</p>
+                        </div>
+                        <div className="absolute top-2 right-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0">
+                            {user?.plan ?? 'free'}
                         </div>
                     </div>
                 </div>
