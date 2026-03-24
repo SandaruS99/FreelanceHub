@@ -87,13 +87,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <Settings className="w-4 h-4" />
                         Settings
                     </Link>
-                    <button
-                        onClick={() => signOut({ callbackUrl: '/auth/login' })}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-sm font-medium transition-all"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        Sign out
-                    </button>
                 </div>
             </aside>
 
@@ -119,7 +112,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                             </button>
                             {userMenuOpen && (
-                                <div className="absolute right-0 top-full mt-2 w-44 bg-slate-800 border border-white/10 rounded-xl shadow-xl py-1 z-50">
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-slate-800 border border-white/10 rounded-xl shadow-xl py-1 z-50">
+                                    <div className="px-4 py-3 border-b border-white/10 mb-1">
+                                        <p className="text-sm font-medium text-white">{user?.name}</p>
+                                        <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+                                        <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                            {(user as any)?.plan || 'free'} Plan
+                                        </div>
+                                    </div>
                                     <Link href="/dashboard/settings" className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-2 transition">
                                         <Settings className="w-3.5 h-3.5" /> Settings
                                     </Link>
