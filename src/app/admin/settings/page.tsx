@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { User, Lock, Save, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Settings, Save, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { CurrencyCombobox, TIMEZONES } from '@/components/CurrencyCombobox';
 
-type Tab = 'platform' | 'security';
+type Tab = 'platform' | 'security' | 'preferences';
 
 function StatusMessage({ msg }: { msg: { text: string; type: 'success' | 'error' } | null }) {
     if (!msg) return null;
@@ -27,6 +28,10 @@ export default function AdminSettingsPage() {
     // Platform tab
     const [name, setName] = useState(u?.name || '');
 
+    // Preferences tab
+    const [currency, setCurrency] = useState(u?.currency || 'USD');
+    const [timezone, setTimezone] = useState(u?.timezone || 'UTC');
+
     // Security tab
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -46,6 +51,23 @@ export default function AdminSettingsPage() {
             if (!res.ok) throw new Error(data.error);
             await update({ name });
             setStatus({ text: 'Profile updated successfully!', type: 'success' });
+        } catch (e: any) {
+            setStatus({ text: e.message || 'Error saving', type: 'error' });
+        } finally { setLoading(false); }
+    };
+
+    const savePreferences = async () => {
+        setLoading(true); setStatus(null);
+        try {
+            const res = await fetch('/api/user/preferences', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ currency, timezone }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            await update({ currency, timezone });
+            setStatus({ text: 'Preferences updated successfully!', type: 'success' });
         } catch (e: any) {
             setStatus({ text: e.message || 'Error saving', type: 'error' });
         } finally { setLoading(false); }
@@ -74,6 +96,7 @@ export default function AdminSettingsPage() {
     const tabs = [
         { id: 'platform' as Tab, label: 'Platform', icon: User },
         { id: 'security' as Tab, label: 'Security', icon: Lock },
+        { id: 'preferences' as Tab, label: 'Preferences', icon: Settings },
     ];
 
     return (
@@ -181,7 +204,32 @@ export default function AdminSettingsPage() {
                         </div>
                     </>
                 )}
+
+                {/* Preferences Tab */}
+                {tab === 'preferences' && (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-slate-300">Currency</label>
+                                <CurrencyCombobox value={currency} onChange={setCurrency} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-slate-300">Timezone</label>
+                                <select value={timezone} onChange={e => setTimezone(e.target.value)} className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition text-sm">
+                                    {TIMEZONES.map(tz => <option key={tz} value={tz} className="bg-slate-800">{tz}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="pt-2 flex justify-end">
+                            <button onClick={savePreferences} disabled={loading} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-medium text-sm transition disabled:opacity-50">
+                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Settings className="w-4 h-4" />}
+                                Save Preferences
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
 }
+
