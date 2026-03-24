@@ -57,16 +57,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     })}
                 </nav>
 
-                {/* Sign Out */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/5">
-                    <button
-                        onClick={() => signOut({ callbackUrl: '/auth/login' })}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-sm font-medium transition-all"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        Sign out
-                    </button>
-                </div>
             </aside>
 
             {/* Overlay */}
