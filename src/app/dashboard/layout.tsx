@@ -96,7 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
 
             {/* Main */}
-            <div className="flex-1 lg:ml-64">
+            <div className="flex-1 lg:ml-64 flex flex-col min-w-0 overflow-x-hidden">
                 {/* Topbar */}
                 <header className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4 lg:px-8 h-16">
                     <button className="lg:hidden text-slate-400 hover:text-white" onClick={() => setSidebarOpen(!sidebarOpen)}>

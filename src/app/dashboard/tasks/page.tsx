@@ -96,9 +96,9 @@ export default function TasksPage() {
                     <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
                 </div>
             ) : (
-                <div className="w-full">
+                <div className="w-full overflow-x-hidden">
                     {/* Horizontal Scroll Container - isolated to board only */}
-                    <div className="overflow-x-auto pb-8 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent rounded-2xl">
+                    <div className="w-full overflow-x-auto pb-8 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent rounded-2xl">
                         <div className="flex gap-6 pb-2" style={{ width: 'max-content' }}>
                             {columns.map((col) => (
                                 <div 
