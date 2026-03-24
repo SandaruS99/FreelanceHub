@@ -3,19 +3,35 @@ import type { NextAuthConfig } from 'next-auth';
 export const authConfig = {
     providers: [],
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id;
-                token.role = (user as { role?: string }).role;
-                token.status = (user as { status?: string }).status;
+                token.role = (user as any).role;
+                token.status = (user as any).status;
+                token.plan = (user as any).plan;
+                token.businessName = (user as any).businessName;
+                token.phone = (user as any).phone;
+                token.currency = (user as any).currency;
+                token.timezone = (user as any).timezone;
+                token.avatar = (user as any).avatar;
+            }
+            // Allow session.update() to refresh token fields
+            if (trigger === 'update' && session) {
+                return { ...token, ...session };
             }
             return token;
         },
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
-                (session.user as { role?: string }).role = token.role as string;
-                (session.user as { status?: string }).status = token.status as string;
+                (session.user as any).role = token.role;
+                (session.user as any).status = token.status;
+                (session.user as any).plan = token.plan;
+                (session.user as any).businessName = token.businessName;
+                (session.user as any).phone = token.phone;
+                (session.user as any).currency = token.currency;
+                (session.user as any).timezone = token.timezone;
+                (session.user as any).avatar = token.avatar;
             }
             return session;
         },
