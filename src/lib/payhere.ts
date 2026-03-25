@@ -21,7 +21,8 @@ export interface PayHereParams {
 
 const MERCHANT_ID = process.env.PAYHERE_MERCHANT_ID || '';
 const MERCHANT_SECRET = process.env.PAYHERE_SECRET || '';
-const IS_SANDBOX = process.env.NODE_ENV !== 'production';
+const PAYHERE_MODE = process.env.PAYHERE_MODE || (process.env.NODE_ENV === 'production' ? 'live' : 'sandbox');
+const IS_SANDBOX = PAYHERE_MODE !== 'live';
 
 export const PAYHERE_URL = IS_SANDBOX
     ? 'https://sandbox.payhere.lk/pay/checkout'

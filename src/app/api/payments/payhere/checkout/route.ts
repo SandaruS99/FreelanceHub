@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Invoice from '@/models/Invoice';
-import { generatePayHereHash } from '@/lib/payhere';
+import { generatePayHereHash, PAYHERE_URL } from '@/lib/payhere';
 import { auth } from '@/lib/auth';
 
 /**
@@ -80,7 +80,8 @@ export async function POST(req: NextRequest) {
             address: customer.address,
             city: customer.city,
             country: customer.country,
-            hash
+            hash,
+            payhere_url: PAYHERE_URL,
         };
 
         return NextResponse.json(params);
