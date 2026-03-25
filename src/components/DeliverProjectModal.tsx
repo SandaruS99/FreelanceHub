@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Send, Loader2, Link as LinkIcon, AlertCircle, MessageSquare, Phone } from 'lucide-react';
+import { X, Send, Loader2, Link as LinkIcon, AlertCircle, MessageSquare, Phone, Copy, Check } from 'lucide-react';
 
 interface DeliverProjectModalProps {
     projectId: string;
@@ -26,9 +26,19 @@ export default function DeliverProjectModal({
     const [whatsapp, setWhatsapp] = useState(clientWhatsapp || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
+
+    const formatWhatsAppNumber = (num: string) => {
+        let clean = num.replace(/\D/g, '');
+        // If it starts with 0 and is 10 digits (Sri Lanka local format), prepend 94
+        if (clean.startsWith('0') && clean.length === 10) {
+            clean = '94' + clean.substring(1);
+        }
+        return clean;
+    };
 
     const getWhatsAppLink = (number: string, message: string) => {
-        const cleanNumber = number.replace(/\D/g, '');
+        const cleanNumber = formatWhatsAppNumber(number);
         const encodedMsg = encodeURIComponent(message);
 
         // Use a simple heuristic for mobile detection (could be more robust)
@@ -137,9 +147,23 @@ export default function DeliverProjectModal({
                     </div>
 
                     <div className="bg-purple-900/20 border border-purple-500/20 rounded-xl overflow-hidden">
-                        <div className="px-4 py-2 bg-purple-500/20 border-b border-purple-500/20 flex items-center gap-2">
-                            <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
-                            <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">WhatsApp Message Preview</span>
+                        <div className="px-4 py-2 bg-purple-500/20 border-b border-purple-500/20 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                                <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
+                                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">WhatsApp Message Preview</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(previewMessage.replace('TOKEN_WILL_BE_HERE', '...'));
+                                    setCopied(true);
+                                    setTimeout(() => setCopied(false), 2000);
+                                }}
+                                className="text-[10px] font-bold text-purple-400 hover:text-white transition flex items-center gap-1"
+                            >
+                                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                {copied ? 'COPIED' : 'COPY'}
+                            </button>
                         </div>
                         <div className="p-4">
                             <div className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed font-mono italic">

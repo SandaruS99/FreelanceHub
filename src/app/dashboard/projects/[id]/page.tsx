@@ -290,10 +290,17 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                         onClick={() => {
                                             const previewUrl = `${window.location.origin}/preview/project/${project.deliveryToken}`;
                                             const message = encodeURIComponent(`*Hi ${project.clientId?.name}!* 🚀\n\nI've finished the project *"${project.name}"* and it's ready for your review!\n\n🔗 *View Secure Preview:* ${previewUrl}\n\nLooking forward to your feedback!`);
+
+                                            let cleanNumber = project.clientId?.whatsapp?.replace(/\D/g, '') || '';
+                                            if (cleanNumber.startsWith('0') && cleanNumber.length === 10) {
+                                                cleanNumber = '94' + cleanNumber.substring(1);
+                                            }
+
                                             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                                            const baseUrl = isMobile ? 'https://wa.me/' : 'https://web.whatsapp.com/send?phone=';
-                                            const cleanNumber = project.clientId?.whatsapp?.replace(/\D/g, '') || '';
-                                            const url = isMobile ? `${baseUrl}${cleanNumber}?text=${message}` : `${baseUrl}${cleanNumber}&text=${message}`;
+                                            const url = isMobile
+                                                ? `https://wa.me/${cleanNumber}?text=${message}`
+                                                : `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${message}`;
+
                                             window.open(url, '_blank');
                                         }}
                                         className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1.5 transition"
