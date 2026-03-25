@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Send, Loader2, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { X, Send, Loader2, Link as LinkIcon, AlertCircle, MessageSquare, Phone } from 'lucide-react';
 
 interface DeliverProjectModalProps {
     projectId: string;
     projectName: string;
+    clientId: string;
     clientName: string;
     clientWhatsapp?: string;
     onSuccess: (project: any) => void;
@@ -15,23 +16,50 @@ interface DeliverProjectModalProps {
 export default function DeliverProjectModal({
     projectId,
     projectName,
+    clientId,
     clientName,
     clientWhatsapp,
     onSuccess,
     onClose
 }: DeliverProjectModalProps) {
     const [deliveryFile, setDeliveryFile] = useState('');
+    const [whatsapp, setWhatsapp] = useState(clientWhatsapp || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const getWhatsAppLink = (number: string, message: string) => {
+        const cleanNumber = number.replace(/\D/g, '');
+        const encodedMsg = encodeURIComponent(message);
+
+        // Use a simple heuristic for mobile detection (could be more robust)
+        const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        return isMobile
+            ? `https://wa.me/${cleanNumber}?text=${encodedMsg}`
+            : `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${encodedMsg}`;
+    };
+
+    const previewMessage = `*Hi ${clientName}!* 🚀\n\nI've finished the project *"${projectName}"* and it's ready for your review!\n\n🔗 *View Secure Preview:* ${window.location.origin}/preview/project/TOKEN_WILL_BE_HERE\n\nLooking forward to your feedback!`;
 
     const handleDeliver = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!deliveryFile) return setError('Please provide a file URL');
+        if (!whatsapp) return setError('Please provide a WhatsApp number for the client');
 
         setLoading(true);
         setError(null);
 
         try {
+            // 1. Update client WhatsApp if changed
+            if (whatsapp !== clientWhatsapp) {
+                await fetch(`/api/clients/${clientId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ whatsapp })
+                });
+            }
+
+            // 2. Deliver project
             const res = await fetch(`/api/projects/${projectId}/deliver`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -41,16 +69,12 @@ export default function DeliverProjectModal({
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Delivery failed');
 
-            // Success! Trigger WhatsApp
-            const previewUrl = `${window.location.origin}/preview/project/${data.project.deliveryToken}`;
-            const message = `Hi ${clientName}, I've finished the project "${projectName}"! 🚀\n\nYou can view the deliverables here: ${previewUrl}\n\nThis is a secure, view-only preview.`;
+            // 3. Success! Trigger WhatsApp
+            const finalPreviewUrl = `${window.location.origin}/preview/project/${data.project.deliveryToken}`;
+            const finalMessage = `*Hi ${clientName}!* 🚀\n\nI've finished the project *"${projectName}"* and it's ready for your review!\n\n🔗 *View Secure Preview:* ${finalPreviewUrl}\n\nLooking forward to your feedback!`;
 
-            if (clientWhatsapp) {
-                const waUrl = `https://wa.me/${clientWhatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-                window.open(waUrl, '_blank');
-            } else {
-                alert('Project delivered! Note: No WhatsApp number was found for this client, so the message couldn\'t be sent automatically.');
-            }
+            const waUrl = getWhatsAppLink(whatsapp, finalMessage);
+            window.open(waUrl, '_blank');
 
             onSuccess(data.project);
         } catch (err: any) {
@@ -81,31 +105,58 @@ export default function DeliverProjectModal({
                         </div>
                     )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Project File URL</label>
-                        <div className="relative">
-                            <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                            <input
-                                type="url"
-                                required
-                                value={deliveryFile}
-                                onChange={(e) => setDeliveryFile(e.target.value)}
-                                placeholder="https://cloudinary.com/your-image.jpg"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm transition"
-                            />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Project File URL</label>
+                            <div className="relative">
+                                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                <input
+                                    type="url"
+                                    required
+                                    value={deliveryFile}
+                                    onChange={(e) => setDeliveryFile(e.target.value)}
+                                    placeholder="https://cloudinary.com/your-image.jpg"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm transition"
+                                />
+                            </div>
                         </div>
-                        <p className="mt-2 text-[11px] text-slate-500 italic">
-                            Tip: For the best experience, use a direct image link from Cloudinary or similar.
-                        </p>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Client WhatsApp</label>
+                            <div className="relative">
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                <input
+                                    type="tel"
+                                    required
+                                    value={whatsapp}
+                                    onChange={(e) => setWhatsapp(e.target.value)}
+                                    placeholder="+1 555 000 0000"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm transition"
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="p-4 bg-purple-500/5 border border-purple-500/10 rounded-xl">
-                        <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2">What happens next?</h4>
-                        <ul className="text-xs text-slate-400 space-y-2 list-disc pl-4">
-                            <li>A secure **view-only preview** link will be generated.</li>
-                            <li>The project status will be updated to **Completed**.</li>
-                            <li>A WhatsApp message will be prepared for **{clientName}**.</li>
-                            <li>Watermarks will be applied to protect your designs.</li>
+                    <div className="bg-purple-900/20 border border-purple-500/20 rounded-xl overflow-hidden">
+                        <div className="px-4 py-2 bg-purple-500/20 border-b border-purple-500/20 flex items-center gap-2">
+                            <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
+                            <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">WhatsApp Message Preview</span>
+                        </div>
+                        <div className="p-4">
+                            <div className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed font-mono italic">
+                                {previewMessage}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <AlertCircle className="w-3.5 h-3.5 text-purple-500" />
+                            Next Steps
+                        </h4>
+                        <ul className="text-[11px] text-slate-500 space-y-1.5 list-disc pl-4">
+                            <li>Generate secure **view-only preview** with watermarks.</li>
+                            <li>Automatically prepare professional **WhatsApp link**.</li>
+                            <li>Update Project status to **Completed**.</li>
                         </ul>
                     </div>
 

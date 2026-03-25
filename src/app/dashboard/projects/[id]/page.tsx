@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ArrowLeft, Calendar, Loader2, Trash2, Edit, CheckSquare,
-    AlignLeft, DollarSign, Building2, User, Send, ExternalLink
+    AlignLeft, DollarSign, Building2, User, Send, ExternalLink, MessageSquare, Phone
 } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
 import DeliverProjectModal from '@/components/DeliverProjectModal';
@@ -286,13 +286,21 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                 </div>
                                 <div className="flex justify-between items-center pt-2">
                                     <span className="text-xs text-slate-500">Delivered on {new Date(project.deliveredAt!).toLocaleDateString()}</span>
-                                    <a
-                                        href={`https://wa.me/${project.clientId?.whatsapp?.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${project.clientId?.name}, here is the link to your project "${project.name}": ${window.location.origin}/preview/project/${project.deliveryToken}`)}`}
-                                        target="_blank"
-                                        className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 transition"
+                                    <button
+                                        onClick={() => {
+                                            const previewUrl = `${window.location.origin}/preview/project/${project.deliveryToken}`;
+                                            const message = encodeURIComponent(`*Hi ${project.clientId?.name}!* 🚀\n\nI've finished the project *"${project.name}"* and it's ready for your review!\n\n🔗 *View Secure Preview:* ${previewUrl}\n\nLooking forward to your feedback!`);
+                                            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                                            const baseUrl = isMobile ? 'https://wa.me/' : 'https://web.whatsapp.com/send?phone=';
+                                            const cleanNumber = project.clientId?.whatsapp?.replace(/\D/g, '') || '';
+                                            const url = isMobile ? `${baseUrl}${cleanNumber}?text=${message}` : `${baseUrl}${cleanNumber}&text=${message}`;
+                                            window.open(url, '_blank');
+                                        }}
+                                        className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1.5 transition"
                                     >
+                                        <MessageSquare className="w-3.5 h-3.5" />
                                         Resend WhatsApp
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -304,6 +312,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                 <DeliverProjectModal
                     projectId={project._id}
                     projectName={project.name}
+                    clientId={project.clientId?._id || ''}
                     clientName={project.clientId?.name || 'Client'}
                     clientWhatsapp={project.clientId?.whatsapp}
                     onSuccess={(updatedProject) => {
