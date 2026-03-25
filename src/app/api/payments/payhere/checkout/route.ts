@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
             const invoice = await Invoice.findOne({ publicToken: id }).populate('freelancerId clientId');
             if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
 
-            orderId = `INV-${invoice.invoiceNumber}-${invoice.publicToken}`;
+            // Shorten orderId to stay under 40 characters (INV + _id is 28 chars)
+            orderId = `INV-${invoice._id.toString()}`;
             amount = invoice.total;
             currency = invoice.currency;
             items = `Invoice #${invoice.invoiceNumber}`;
@@ -48,7 +49,8 @@ export async function POST(req: NextRequest) {
             const plan = planDetails[id as string];
             if (!plan) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
 
-            orderId = `PLAN-${(session.user as any).id}-${id}-${Date.now()}`;
+            // Shorten orderId to stay under 40 characters
+            orderId = `PLAN-${(session.user as any).id}-${id}`;
             amount = plan.price;
             currency = 'USD';
             items = `Subscription Upgrade: ${plan.name}`;

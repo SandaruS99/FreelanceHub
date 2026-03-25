@@ -33,11 +33,10 @@ export async function POST(req: NextRequest) {
         if (status_code === '2') {
             if (order_id.startsWith('INV-')) {
                 // Handle Invoice Payment
-                // Expected order_id format: INV-{InvoiceNumber}-{PublicToken}
-                const parts = order_id.split('-');
-                const publicToken = parts[parts.length - 1];
+                // New format: INV-{InvoiceId}
+                const invoiceId = order_id.replace('INV-', '');
 
-                const invoice = await Invoice.findOne({ publicToken });
+                const invoice = await Invoice.findById(invoiceId);
                 if (invoice && invoice.status !== 'paid') {
                     invoice.status = 'paid';
                     invoice.paidAt = new Date();
@@ -50,8 +49,10 @@ export async function POST(req: NextRequest) {
                 }
             } else if (order_id.startsWith('PLAN-')) {
                 // Handle Subscription Upgrade
-                // Expected order_id format: PLAN-{UserId}-{PlanId}-{Timestamp}
-                const [, userId, planId] = order_id.split('-');
+                // New format: PLAN-{UserId}-{PlanId}
+                const parts = order_id.split('-');
+                const userId = parts[1];
+                const planId = parts[2];
 
                 const user = await User.findById(userId);
                 if (user) {
