@@ -5,25 +5,31 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ArrowLeft, Calendar, Loader2, Trash2, Edit, CheckSquare,
-    AlignLeft, DollarSign, Building2, User
+    AlignLeft, DollarSign, Building2, User, Send, ExternalLink
 } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
+import DeliverProjectModal from '@/components/DeliverProjectModal';
 
 interface Project {
     _id: string;
     name: string;
     description?: string;
-    clientId?: {
-        _id: string;
-        name: string;
-        company?: string;
-    };
     status: string;
     priority: string;
     startDate?: string;
     endDate?: string;
     budget?: number;
     progress: number;
+    deliveryFile?: string;
+    deliveryToken?: string;
+    isDelivered?: boolean;
+    deliveredAt?: string;
+    clientId?: {
+        _id: string;
+        name: string;
+        company?: string;
+        whatsapp?: string;
+    };
 }
 
 export default function ProjectDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -34,6 +40,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const [loading, setLoading] = useState(true);
     const [updatingProgress, setUpdatingProgress] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [isDeliverModalOpen, setIsDeliverModalOpen] = useState(false);
     const { format } = useCurrency();
 
     useEffect(() => {
@@ -129,6 +136,14 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                         {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         Delete
                     </button>
+                    {project.status !== 'completed' && (
+                        <button
+                            onClick={() => setIsDeliverModalOpen(true)}
+                            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl transition text-sm font-bold shadow-lg shadow-purple-500/20"
+                        >
+                            <Send className="w-4 h-4" /> Deliver
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -242,8 +257,62 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             </div>
                         </div>
                     </div>
+
+                    {/* Delivery Info */}
+                    {project.isDelivered && (
+                        <div className="bg-gradient-to-br from-purple-500/10 to-indigo-600/10 border border-purple-500/20 rounded-2xl p-6">
+                            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                <Send className="w-5 h-5 text-purple-400" /> Delivery Info
+                            </h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Secure Preview Link</p>
+                                    <div className="flex items-center gap-2 p-3 bg-white/5 border border-white/10 rounded-xl">
+                                        <input
+                                            readOnly
+                                            value={`${window.location.origin}/preview/project/${project.deliveryToken}`}
+                                            className="bg-transparent border-none text-xs text-purple-400 font-mono w-full focus:outline-none"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(`${window.location.origin}/preview/project/${project.deliveryToken}`);
+                                                alert('Link copied!');
+                                            }}
+                                            className="p-1.5 hover:bg-white/10 rounded-lg transition text-slate-400"
+                                        >
+                                            <ExternalLink className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center pt-2">
+                                    <span className="text-xs text-slate-500">Delivered on {new Date(project.deliveredAt!).toLocaleDateString()}</span>
+                                    <a
+                                        href={`https://wa.me/${project.clientId?.whatsapp?.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${project.clientId?.name}, here is the link to your project "${project.name}": ${window.location.origin}/preview/project/${project.deliveryToken}`)}`}
+                                        target="_blank"
+                                        className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 transition"
+                                    >
+                                        Resend WhatsApp
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {isDeliverModalOpen && (
+                <DeliverProjectModal
+                    projectId={project._id}
+                    projectName={project.name}
+                    clientName={project.clientId?.name || 'Client'}
+                    clientWhatsapp={project.clientId?.whatsapp}
+                    onSuccess={(updatedProject) => {
+                        setProject(updatedProject);
+                        setIsDeliverModalOpen(false);
+                    }}
+                    onClose={() => setIsDeliverModalOpen(false)}
+                />
+            )}
         </div>
     );
 }

@@ -44,6 +44,7 @@ export default function SettingsPage() {
     const [name, setName] = useState(u?.name || '');
     const [businessName, setBusinessName] = useState(u?.businessName || '');
     const [phone, setPhone] = useState(u?.phone || '');
+    const [whatsapp, setWhatsapp] = useState(u?.whatsapp || '');
     const [website, setWebsite] = useState(u?.website || '');
     const [businessAddress, setBusinessAddress] = useState(u?.businessAddress || '');
     const [avatar, setAvatar] = useState(u?.avatar || '');
@@ -65,11 +66,11 @@ export default function SettingsPage() {
             const res = await fetch('/api/user/profile', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, businessName, phone, website, businessAddress, avatar }),
+                body: JSON.stringify({ name, businessName, phone, whatsapp, website, businessAddress, avatar }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            await update({ name, businessName, phone, website, businessAddress, avatar });
+            await update({ name, businessName, phone, whatsapp, website, businessAddress, avatar });
             setStatus({ text: 'Profile updated successfully!', type: 'success' });
         } catch (e: any) {
             setStatus({ text: e.message || 'Error saving profile', type: 'error' });
@@ -164,6 +165,7 @@ export default function SettingsPage() {
                             <InputField label="Full Name" value={name} onChange={setName} placeholder="Jane Doe" />
                             <InputField label="Business Name" value={businessName} onChange={setBusinessName} placeholder="Acme Inc." />
                             <InputField label="Phone" value={phone} onChange={setPhone} placeholder="+1 555 000 0000" />
+                            <InputField label="WhatsApp" value={whatsapp} onChange={setWhatsapp} placeholder="+1 555 000 0000" />
                             <InputField label="Website" type="url" value={website} onChange={setWebsite} placeholder="https://yoursite.com" />
                         </div>
                         <InputField label="Business Address" value={businessAddress} onChange={setBusinessAddress} placeholder="123 Main St, City, Country" />

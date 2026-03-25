@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest) {
         const userId = (session.user as any).id;
         const data = await req.json();
 
-        const allowed = ['name', 'businessName', 'businessAddress', 'phone', 'website', 'avatar'];
+        const allowed = ['name', 'businessName', 'businessAddress', 'phone', 'whatsapp', 'website', 'avatar'];
         const update: Record<string, string> = {};
         for (const key of allowed) {
             if (data[key] !== undefined) update[key] = data[key];

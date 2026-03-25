@@ -13,7 +13,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params;
 
     await dbConnect();
-    const project = await Project.findOne({ _id: id, freelancerId: userId }).populate('clientId', 'name company email');
+    const project = await Project.findOne({ _id: id, freelancerId: userId }).populate('clientId', 'name company email whatsapp');
 
     if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     return NextResponse.json({ project });

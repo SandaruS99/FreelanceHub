@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Briefcase, Mail, Lock, User, Building2, Loader2, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Briefcase, Mail, Lock, User, Building2, Loader2, CheckCircle, Eye, EyeOff, Phone } from 'lucide-react';
 
 export default function RegisterPage() {
     const router = useRouter();
-    const [form, setForm] = useState({ name: '', email: '', password: '', businessName: '' });
+    const [form, setForm] = useState({ name: '', email: '', password: '', businessName: '', whatsapp: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -83,6 +83,14 @@ export default function RegisterPage() {
                             <div className="relative">
                                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                 <input type="text" value={form.businessName} onChange={(e) => update('businessName', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="My Studio" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-1.5">WhatsApp Number</label>
+                            <div className="relative">
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input type="tel" value={form.whatsapp} onChange={(e) => update('whatsapp', e.target.value)} required className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="+1 555 000 0000" />
                             </div>
                         </div>
 

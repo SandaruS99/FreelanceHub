@@ -5,9 +5,9 @@ import { randomBytes } from 'crypto';
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, email, password, businessName } = await req.json();
+        const { name, email, password, businessName, whatsapp } = await req.json();
 
-        if (!name || !email || !password) {
+        if (!name || !email || !password || !whatsapp) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
             email,
             password,
             businessName,
+            whatsapp,
             role: 'freelancer',
             status: 'pending',
             verificationToken,

@@ -20,6 +20,10 @@ export interface IProject extends Document {
     progress: number;
     milestones: IMilestone[];
     tags: string[];
+    deliveryFile?: string;
+    deliveryToken?: string;
+    isDelivered: boolean;
+    deliveredAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -49,6 +53,10 @@ const ProjectSchema = new Schema<IProject>(
         progress: { type: Number, default: 0, min: 0, max: 100 },
         milestones: [MilestoneSchema],
         tags: [{ type: String, trim: true }],
+        deliveryFile: { type: String },
+        deliveryToken: { type: String, unique: true, sparse: true },
+        isDelivered: { type: Boolean, default: false },
+        deliveredAt: { type: Date },
     },
     { timestamps: true }
 );

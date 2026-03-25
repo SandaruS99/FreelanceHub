@@ -8,6 +8,7 @@ import {
     Trash2, Edit, Calendar, CheckSquare, FileText, Plus, Circle
 } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
+import EditClientModal from '@/components/EditClientModal';
 
 interface Client {
     _id: string;
@@ -15,6 +16,7 @@ interface Client {
     company?: string;
     email?: string;
     phone?: string;
+    whatsapp?: string;
     address?: string;
     country?: string;
     website?: string;
@@ -70,6 +72,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const { format } = useCurrency();
 
     useEffect(() => {
@@ -139,7 +142,10 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl transition text-sm font-medium">
+                    <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl transition text-sm font-medium"
+                    >
                         <Edit className="w-4 h-4" /> Edit
                     </button>
                     <button
@@ -174,6 +180,15 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
                                     <div>
                                         <p className="text-sm font-medium text-slate-300">Phone</p>
                                         <a href={`tel:${client.phone}`} className="text-slate-400 hover:text-white text-sm">{client.phone}</a>
+                                    </div>
+                                </div>
+                            )}
+                            {client.whatsapp && (
+                                <div className="flex items-start gap-3">
+                                    <Phone className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-300">WhatsApp</p>
+                                        <a href={`https://wa.me/${client.whatsapp.replace(/\D/g, '')}`} target="_blank" className="text-purple-400 hover:text-purple-300 text-sm">{client.whatsapp}</a>
                                     </div>
                                 </div>
                             )}
@@ -353,6 +368,17 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
                     </div>
                 </div>
             </div>
+
+            {isEditModalOpen && (
+                <EditClientModal
+                    client={client}
+                    onSuccess={(updated) => {
+                        setClient(updated);
+                        setIsEditModalOpen(false);
+                    }}
+                    onClose={() => setIsEditModalOpen(false)}
+                />
+            )}
         </div>
     );
 }

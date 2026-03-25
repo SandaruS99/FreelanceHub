@@ -15,6 +15,7 @@ export default function NewClientPage() {
         company: '',
         email: '',
         phone: '',
+        whatsapp: '',
         address: '',
         country: '',
         website: '',

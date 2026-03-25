@@ -13,6 +13,7 @@ export interface IUser extends Document {
     businessName?: string;
     businessAddress?: string;
     phone?: string;
+    whatsapp?: string;
     website?: string;
     currency: string;
     timezone: string;
@@ -38,6 +39,7 @@ const UserSchema = new Schema<IUser>(
         businessName: { type: String, trim: true },
         businessAddress: { type: String, trim: true },
         phone: { type: String, trim: true },
+        whatsapp: { type: String, trim: true },
         website: { type: String, trim: true },
         currency: { type: String, default: 'USD' },
         timezone: { type: String, default: 'UTC' },
