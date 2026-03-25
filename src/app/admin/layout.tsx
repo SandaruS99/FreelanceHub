@@ -76,13 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     })}
                 </nav>
 
-                {/* Bottom */}
-                <div className="border-t border-white/5 p-4 space-y-0.5">
-                    <Link href="/admin/settings" onClick={() => setSidebarOpen(false)} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === '/admin/settings' ? 'bg-purple-600/20 text-purple-300' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                        <Settings className="w-4 h-4" />
-                        Settings
-                    </Link>
-                </div>
+                {/* Bottom section removed per user request */}
 
             </aside>
 

@@ -80,17 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     })}
                 </nav>
 
-                {/* Bottom */}
-                <div className="border-t border-white/5 p-4 space-y-0.5">
-                    <Link href="/dashboard/settings/billing" onClick={() => setSidebarOpen(false)} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === '/dashboard/settings/billing' ? 'bg-purple-600/20 text-purple-300' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                        <CreditCard className="w-4 h-4" />
-                        Billing
-                    </Link>
-                    <Link href="/dashboard/settings" onClick={() => setSidebarOpen(false)} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === '/dashboard/settings' ? 'bg-purple-600/20 text-purple-300' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                        <Settings className="w-4 h-4" />
-                        Settings
-                    </Link>
-                </div>
+                {/* Bottom section removed per user request */}
             </aside>
 
             {/* Overlay */}
@@ -125,6 +115,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                     </div>
                                     <Link href="/dashboard/settings" className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-2 transition">
                                         <Settings className="w-3.5 h-3.5" /> Settings
+                                    </Link>
+                                    <Link href="/dashboard/settings/billing" className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-2 transition">
+                                        <CreditCard className="w-3.5 h-3.5" /> Billing
                                     </Link>
                                     <hr className="border-white/10 my-1" />
                                     <button onClick={() => signOut({ callbackUrl: '/auth/login' })} className="w-full text-left px-4 py-2 text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition">
