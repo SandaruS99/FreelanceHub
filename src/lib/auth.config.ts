@@ -6,15 +6,15 @@ export const authConfig = {
         async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id;
-                token.role = (user as any).role;
-                token.status = (user as any).status;
-                token.plan = (user as any).plan;
-                token.businessName = (user as any).businessName;
-                token.phone = (user as any).phone;
-                token.currency = (user as any).currency;
-                token.timezone = (user as any).timezone;
-                token.avatar = (user as any).avatar;
-                token.userId = (user as any).userId;
+                token.role = user.role;
+                token.status = user.status;
+                token.plan = user.plan;
+                token.businessName = user.businessName;
+                token.phone = user.phone;
+                token.currency = user.currency;
+                token.timezone = user.timezone;
+                token.avatar = user.avatar;
+                token.userId = user.userId;
             }
             // Allow session.update() to refresh token fields
             if (trigger === 'update' && session) {
@@ -24,16 +24,16 @@ export const authConfig = {
         },
         async session({ session, token }) {
             if (token && session.user) {
-                session.user.id = token.id as string;
-                (session.user as any).role = token.role;
-                (session.user as any).status = token.status;
-                (session.user as any).plan = token.plan;
-                (session.user as any).businessName = token.businessName;
-                (session.user as any).phone = token.phone;
-                (session.user as any).currency = token.currency;
-                (session.user as any).timezone = token.timezone;
-                (session.user as any).avatar = token.avatar;
-                (session.user as any).userId = token.userId;
+                session.user.id = token.id;
+                session.user.role = token.role;
+                session.user.status = token.status;
+                session.user.plan = token.plan;
+                session.user.businessName = token.businessName;
+                session.user.phone = token.phone;
+                session.user.currency = token.currency;
+                session.user.timezone = token.timezone;
+                session.user.avatar = token.avatar;
+                session.user.userId = token.userId;
             }
             return session;
         },
