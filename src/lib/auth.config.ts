@@ -1,4 +1,51 @@
-import type { NextAuthConfig } from 'next-auth';
+import type { NextAuthConfig, DefaultSession } from 'next-auth';
+import type { JWT as NextAuthJWT } from 'next-auth/jwt';
+
+// Extend types directly here for build reliability
+declare module 'next-auth' {
+    interface Session {
+        user: {
+            id: string;
+            role?: string;
+            status?: string;
+            plan?: string;
+            businessName?: string;
+            phone?: string;
+            currency?: string;
+            timezone?: string;
+            avatar?: string;
+            userId?: string;
+        } & DefaultSession['user']
+    }
+
+    interface User {
+        id: string; // Must be mandatory to match DefaultSession
+        role?: string;
+        status?: string;
+        plan?: string;
+        businessName?: string;
+        phone?: string;
+        currency?: string;
+        timezone?: string;
+        avatar?: string;
+        userId?: string;
+    }
+}
+
+declare module 'next-auth/jwt' {
+    interface JWT {
+        id: string;
+        role?: string;
+        status?: string;
+        plan?: string;
+        businessName?: string;
+        phone?: string;
+        currency?: string;
+        timezone?: string;
+        avatar?: string;
+        userId?: string;
+    }
+}
 
 export const authConfig = {
     providers: [],
