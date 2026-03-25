@@ -57,9 +57,10 @@ export default function BillingPage() {
                 body: JSON.stringify({ type: 'plan', id: plan }),
             });
 
-            if (!res.ok) throw new Error('Failed to initialize PayHere checkout');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to initialize PayHere checkout');
 
-            const params = await res.json();
+            const params = data;
 
             // Submit hidden form to PayHere
             const form = document.createElement('form');

@@ -100,9 +100,10 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ token:
                 body: JSON.stringify({ type: 'invoice', id: token }),
             });
 
-            if (!res.ok) throw new Error('Failed to initialize PayHere checkout');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to initialize PayHere checkout');
 
-            const params = await res.json();
+            const params = data;
 
             // Create and submit a hidden form to PayHere
             const form = document.createElement('form');

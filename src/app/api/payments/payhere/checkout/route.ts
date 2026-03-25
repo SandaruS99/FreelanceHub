@@ -8,6 +8,17 @@ import { auth } from '@/lib/auth';
  * Generates signed PayHere checkout parameters for an Invoice or Plan update.
  */
 export async function POST(req: NextRequest) {
+    // Check for required configuration early
+    const merchantId = process.env.PAYHERE_MERCHANT_ID;
+    const merchantSecret = process.env.PAYHERE_SECRET;
+
+    if (!merchantId || !merchantSecret) {
+        console.error('CRITICAL: PayHere credentials missing in environment variables.');
+        return NextResponse.json({
+            error: 'Payment system not configured. Please add PAYHERE_MERCHANT_ID and PAYHERE_SECRET to your environment.'
+        }, { status: 500 });
+    }
+
     try {
         const body = await req.json();
         const { type, id } = body; // type: 'invoice' | 'plan', id: token or planId
