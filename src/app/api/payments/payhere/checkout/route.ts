@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Invoice from '@/models/Invoice';
-import { generatePayHereHash, PAYHERE_URL } from '@/lib/payhere';
+import { generatePayHereHash, PAYHERE_URL, convertToLKR } from '@/lib/payhere';
 import { auth } from '@/lib/auth';
 
 /**
@@ -75,7 +75,6 @@ export async function POST(req: NextRequest) {
             };
         }
 
-        const { convertToLKR } = require('@/lib/payhere');
         const finalAmount = convertToLKR(amount, currency);
         const finalCurrency = 'LKR';
 
