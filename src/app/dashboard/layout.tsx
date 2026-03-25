@@ -80,7 +80,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     })}
                 </nav>
 
-                {/* Bottom section removed per user request */}
+                {/* Billing preserved in sidebar, Settings moved to profile dropdown */}
+                <div className="border-t border-white/5 p-4 space-y-0.5">
+                    <Link href="/dashboard/settings/billing" onClick={() => setSidebarOpen(false)} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === '/dashboard/settings/billing' ? 'bg-purple-600/20 text-purple-300 border border-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                        <CreditCard className="w-4 h-4" />
+                        Billing
+                    </Link>
+                </div>
             </aside>
 
             {/* Overlay */}
