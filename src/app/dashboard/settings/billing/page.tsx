@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Check, Zap, Building, Loader2 } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
@@ -13,31 +13,71 @@ export default function BillingPage() {
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+    useEffect(() => {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.get('status') === 'success') {
+            setMessage({ text: 'Payment successful! Your plan is being updated...', type: 'success' });
+            // The IPN will handle the DB update, but we refresh the session to be sure
+            update();
+            setTimeout(() => window.location.href = '/dashboard/settings/billing', 3000);
+        } else if (searchParams.get('status') === 'cancelled') {
+            setMessage({ text: 'Payment was cancelled.', type: 'error' });
+        }
+    }, [update]);
+
     const handleUpgrade = async (plan: string) => {
+        if (plan === 'free') {
+            // Downgrade or stay free - usually handled differently, but we'll follow existing mock for free
+            setLoadingPlan(plan);
+            try {
+                const res = await fetch('/api/user/upgrade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plan })
+                });
+                if (!res.ok) throw new Error('Failed to update plan');
+                await update({ plan });
+                setMessage({ text: 'Plan updated to Free.', type: 'success' });
+            } catch (error: any) {
+                setMessage({ text: error.message, type: 'error' });
+            } finally {
+                setLoadingPlan(null);
+            }
+            return;
+        }
+
+        // PayHere Flow for Pro / Business
         setLoadingPlan(plan);
         setMessage(null);
 
         try {
-            const res = await fetch('/api/user/upgrade', {
+            const res = await fetch('/api/payments/payhere/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan })
+                body: JSON.stringify({ type: 'plan', id: plan }),
             });
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to upgrade plan');
+            if (!res.ok) throw new Error('Failed to initialize PayHere checkout');
 
-            // Force session update to reflect the new plan globally
-            await update({ plan });
-            setMessage({ text: `Successfully upgraded to ${plan.toUpperCase()}!`, type: 'success' });
+            const params = await res.json();
 
-            // Reload page gently to refresh session UI fully
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            // Submit hidden form to PayHere
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = params.payhere_url || 'https://sandbox.payhere.lk/pay/checkout';
+
+            Object.entries(params).forEach(([key, value]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value as string;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
         } catch (error: any) {
-            setMessage({ text: error.message || 'Error processing upgrade', type: 'error' });
-        } finally {
+            setMessage({ text: error.message || 'Payment initialization failed', type: 'error' });
             setLoadingPlan(null);
         }
     };

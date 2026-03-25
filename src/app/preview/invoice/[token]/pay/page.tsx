@@ -60,37 +60,67 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ token:
         }
     };
 
+    useEffect(() => {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.get('status') === 'success') {
+            setIsSuccess(true);
+        }
+    }, []);
+
     const handlePayment = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (paymentMethod === 'bank') {
+            // Manual bank transfer mark as "processing" or "paid" manually (existing logic)
+            setIsProcessing(true);
+            try {
+                const res = await fetch(`/api/public/invoices/${token}/pay`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ method: 'Bank Transfer', amount: invoice?.total }),
+                });
+                if (!res.ok) throw new Error('Failed to mark as paid');
+                setIsSuccess(true);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setIsProcessing(false);
+            }
+            return;
+        }
+
+        // PayHere Flow for Card
         setIsProcessing(true);
         setError('');
 
         try {
-            const res = await fetch(`/api/public/invoices/${token}/pay`, {
+            const res = await fetch('/api/payments/payhere/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    method: paymentMethod === 'card' ? 'Credit Card' : 'Bank Transfer',
-                    amount: invoice?.total
-                }),
+                body: JSON.stringify({ type: 'invoice', id: token }),
             });
 
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Payment failed');
-            }
+            if (!res.ok) throw new Error('Failed to initialize PayHere checkout');
 
-            setIsSuccess(true);
-            if (invoice) {
-                setInvoice({ ...invoice, status: 'paid' });
-            }
-        } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('An unknown error occurred during payment');
-            }
-        } finally {
+            const params = await res.json();
+
+            // Create and submit a hidden form to PayHere
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = params.payhere_url || 'https://sandbox.payhere.lk/pay/checkout';
+
+            Object.entries(params).forEach(([key, value]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value as string;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        } catch (err: any) {
+            setError(err.message || 'Payment initialization failed');
             setIsProcessing(false);
         }
     };
