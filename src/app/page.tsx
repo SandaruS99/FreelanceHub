@@ -1,4 +1,5 @@
 import Link from 'next/link';
+// Project Delivery & WhatsApp Integration Live - v1.0.1
 import {
   Briefcase, CheckCircle, Users, FolderKanban, FileText, BarChart2, MessageSquare, ArrowRight, Star
 } from 'lucide-react';
