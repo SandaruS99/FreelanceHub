@@ -122,9 +122,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                     <Link href="/dashboard/settings" className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-2 transition">
                                         <Settings className="w-3.5 h-3.5" /> Settings
                                     </Link>
-                                    <Link href="/dashboard/settings/billing" className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-2 transition">
-                                        <CreditCard className="w-3.5 h-3.5" /> Billing
-                                    </Link>
                                     <hr className="border-white/10 my-1" />
                                     <button onClick={() => signOut({ callbackUrl: '/auth/login' })} className="w-full text-left px-4 py-2 text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition">
                                         <LogOut className="w-3.5 h-3.5" /> Sign out
