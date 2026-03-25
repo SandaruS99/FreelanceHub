@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import Project from '@/models/Project';
 import Task from '@/models/Task';
 import { auth } from '@/lib/auth';
+import { logActivity } from '@/lib/activity';
 
 export async function GET(req: NextRequest) {
     const session = await auth();
@@ -51,6 +52,8 @@ export async function POST(req: NextRequest) {
         }));
         await Task.insertMany(tasksToCreate);
     }
+
+    await logActivity(userId, 'Created Project', `Project: ${projectData.name}${tasks?.length ? ` with ${tasks.length} tasks` : ''}`);
 
     return NextResponse.json({ project }, { status: 201 });
 }

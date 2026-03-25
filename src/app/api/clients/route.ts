@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Client from '@/models/Client';
 import { auth } from '@/lib/auth';
+import { logActivity } from '@/lib/activity';
 
 export async function GET(req: NextRequest) {
     const session = await auth();
@@ -62,5 +63,8 @@ export async function POST(req: NextRequest) {
     }
 
     const client = await Client.create({ ...data, freelancerId: userId });
+
+    await logActivity(userId, 'Created Client', `Client: ${client.name}`);
+
     return NextResponse.json({ client }, { status: 201 });
 }

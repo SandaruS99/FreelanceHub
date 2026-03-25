@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Task from '@/models/Task';
 import { auth } from '@/lib/auth';
+import { logActivity } from '@/lib/activity';
 
 export async function GET(req: NextRequest) {
     const session = await auth();
@@ -32,5 +33,8 @@ export async function POST(req: NextRequest) {
 
     await dbConnect();
     const task = await Task.create({ ...data, freelancerId: userId });
+
+    await logActivity(userId, 'Created Task', `Task: ${task.title}`);
+
     return NextResponse.json({ task }, { status: 201 });
 }

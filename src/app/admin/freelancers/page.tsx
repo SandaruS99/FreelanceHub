@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, CheckCircle, XCircle, Clock, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, Loader2, RefreshCw, Trash2, FileClock, X } from 'lucide-react';
 
 interface Freelancer {
     _id: string;
@@ -27,6 +27,9 @@ export default function FreelancersPage() {
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState('');
     const [search, setSearch] = useState('');
+    const [selectedUser, setSelectedUser] = useState<Freelancer | null>(null);
+    const [logs, setLogs] = useState<any[]>([]);
+    const [loadingLogs, setLoadingLogs] = useState(false);
 
     const fetchFreelancers = useCallback(async () => {
         setLoading(true);
@@ -65,6 +68,20 @@ export default function FreelancersPage() {
         f.email.toLowerCase().includes(search.toLowerCase()) ||
         (f.userId && f.userId.toLowerCase().includes(search.toLowerCase()))
     );
+
+    const fetchLogs = async (user: Freelancer) => {
+        setSelectedUser(user);
+        setLoadingLogs(true);
+        try {
+            const res = await fetch(`/api/admin/freelancers/${user._id}/activities`);
+            const data = await res.json();
+            setLogs(data.activities || []);
+        } catch (error) {
+            console.error('Failed to fetch logs:', error);
+        } finally {
+            setLoadingLogs(false);
+        }
+    };
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -151,6 +168,14 @@ export default function FreelancersPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => fetchLogs(f)}
+                                                disabled={!!actionLoading}
+                                                title="User Logs"
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition disabled:opacity-50"
+                                            >
+                                                <FileClock className="w-3.5 h-3.5" />
+                                            </button>
                                             {f.status !== 'active' && (
                                                 <button
                                                     onClick={() => changeStatus(f._id, 'active')}
@@ -187,6 +212,64 @@ export default function FreelancersPage() {
                     </table>
                 </div>
             </div>
+
+            {/* Logs Modal */}
+            {selectedUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                            <div>
+                                <h3 className="text-lg font-bold text-white">User Activity Logs</h3>
+                                <p className="text-sm text-slate-400">{selectedUser.name} ({selectedUser.userId || 'No UID'})</p>
+                            </div>
+                            <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-white/5 rounded-lg transition text-slate-400 hover:text-white">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {loadingLogs ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                                    <Loader2 className="w-8 h-8 animate-spin mb-3 text-purple-500" />
+                                    <p>Loading activity logs...</p>
+                                </div>
+                            ) : logs.length === 0 ? (
+                                <div className="text-center py-12 text-slate-500 border-2 border-dashed border-white/5 rounded-xl">
+                                    <FileClock className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                                    <p>No activity logs found for this user.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {logs.map((log) => (
+                                        <div key={log._id} className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition">
+                                            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                                                <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <p className="text-white font-medium text-sm">{log.action}</p>
+                                                    <span className="text-[10px] text-slate-500 whitespace-nowrap bg-white/5 px-2 py-0.5 rounded uppercase font-bold tracking-wider">
+                                                        {new Date(log.createdAt).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                {log.details && (
+                                                    <p className="text-slate-400 text-xs mt-1 italic opacity-80">{log.details}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="px-6 py-4 border-t border-white/5 bg-white/[0.02]">
+                            <button onClick={() => setSelectedUser(null)} className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-sm font-medium transition">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

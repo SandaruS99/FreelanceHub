@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import CrmLog from '@/models/CrmLog';
 import Client from '@/models/Client'; // For population
 import { auth } from '@/lib/auth';
+import { logActivity } from '@/lib/activity';
 
 export async function GET(req: NextRequest) {
     const session = await auth();
@@ -40,6 +41,8 @@ export async function POST(req: NextRequest) {
         ...data,
         freelancerId: userId,
     });
+
+    await logActivity(userId, 'CRM Action', `Logged ${data.type}: ${data.title}`);
 
     return NextResponse.json({ log }, { status: 201 });
 }

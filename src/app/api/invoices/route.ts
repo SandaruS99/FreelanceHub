@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import Invoice from '@/models/Invoice';
 import { auth } from '@/lib/auth';
 import { randomBytes } from 'crypto';
+import { logActivity } from '@/lib/activity';
 
 export async function GET(req: NextRequest) {
     const session = await auth();
@@ -67,6 +68,8 @@ export async function POST(req: NextRequest) {
         taxTotal,
         total,
     });
+
+    await logActivity(userId, 'Created Invoice', `Invoice Number: ${invoiceNumber}`);
 
     return NextResponse.json({ invoice }, { status: 201 });
 }
