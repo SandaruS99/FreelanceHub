@@ -75,7 +75,11 @@ export async function POST(req: NextRequest) {
             };
         }
 
-        const hash = generatePayHereHash(orderId, amount, currency);
+        const { convertToLKR } = require('@/lib/payhere');
+        const finalAmount = convertToLKR(amount, currency);
+        const finalCurrency = 'LKR';
+
+        const hash = generatePayHereHash(orderId, finalAmount, finalCurrency);
 
         const params = {
             merchant_id: process.env.PAYHERE_MERCHANT_ID,
@@ -84,8 +88,8 @@ export async function POST(req: NextRequest) {
             notify_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/payhere/notify`,
             order_id: orderId,
             items: items,
-            currency: currency,
-            amount: amount.toFixed(2),
+            currency: finalCurrency,
+            amount: finalAmount.toFixed(2),
             first_name: customer.name.split(' ')[0],
             last_name: customer.name.split(' ').slice(1).join(' ') || 'Customer',
             email: customer.email,

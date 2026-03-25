@@ -24,9 +24,21 @@ const MERCHANT_SECRET = process.env.PAYHERE_SECRET || '';
 const PAYHERE_MODE = process.env.PAYHERE_MODE || (process.env.NODE_ENV === 'production' ? 'live' : 'sandbox');
 const IS_SANDBOX = PAYHERE_MODE !== 'live';
 
+const USD_TO_LKR_RATE = parseFloat(process.env.USD_TO_LKR_RATE || '300');
+
 export const PAYHERE_URL = IS_SANDBOX
     ? 'https://sandbox.payhere.lk/pay/checkout'
     : 'https://www.payhere.lk/pay/checkout';
+
+/**
+ * Converts any currency amount to LKR for PayHere
+ */
+export function convertToLKR(amount: number, fromCurrencyCode: string) {
+    if (fromCurrencyCode === 'LKR') return amount;
+    // For now, we only handle USD conversion or assume other currencies are USD-equivalent for simpler logic
+    // You can add more complex conversion logic here if needed
+    return amount * USD_TO_LKR_RATE;
+}
 
 /**
  * Generates MD5 hash for PayHere checkout
