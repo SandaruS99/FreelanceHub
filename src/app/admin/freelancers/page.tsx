@@ -5,6 +5,7 @@ import { Search, CheckCircle, XCircle, Clock, Loader2, RefreshCw, Trash2 } from 
 
 interface Freelancer {
     _id: string;
+    userId?: string;
     name: string;
     email: string;
     status: 'pending' | 'active' | 'suspended';
@@ -61,7 +62,8 @@ export default function FreelancersPage() {
 
     const filtered = freelancers.filter((f) =>
         f.name.toLowerCase().includes(search.toLowerCase()) ||
-        f.email.toLowerCase().includes(search.toLowerCase())
+        f.email.toLowerCase().includes(search.toLowerCase()) ||
+        (f.userId && f.userId.toLowerCase().includes(search.toLowerCase()))
     );
 
     return (
@@ -105,6 +107,7 @@ export default function FreelancersPage() {
                     <table className="w-full">
                         <thead>
                             <tr className="border-b border-white/5">
+                                <th className="text-left text-xs font-medium text-slate-400 px-6 py-4">UID</th>
                                 <th className="text-left text-xs font-medium text-slate-400 px-6 py-4">FREELANCER</th>
                                 <th className="text-left text-xs font-medium text-slate-400 px-6 py-4 hidden md:table-cell">BUSINESS</th>
                                 <th className="text-left text-xs font-medium text-slate-400 px-6 py-4">STATUS</th>
@@ -115,11 +118,14 @@ export default function FreelancersPage() {
                         </thead>
                         <tbody className="divide-y divide-white/5">
                             {loading ? (
-                                <tr><td colSpan={6} className="text-center py-12 text-slate-500"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></td></tr>
+                                <tr><td colSpan={7} className="text-center py-12 text-slate-500"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr><td colSpan={6} className="text-center py-12 text-slate-500">No freelancers found.</td></tr>
+                                <tr><td colSpan={7} className="text-center py-12 text-slate-500">No freelancers found.</td></tr>
                             ) : filtered.map((f) => (
                                 <tr key={f._id} className="hover:bg-white/5 transition">
+                                    <td className="px-6 py-4">
+                                        <span className="text-xs font-mono text-purple-400 font-medium">{f.userId || '—'}</span>
+                                    </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold shrink-0">

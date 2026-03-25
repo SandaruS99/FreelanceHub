@@ -14,6 +14,7 @@ export const authConfig = {
                 token.currency = (user as any).currency;
                 token.timezone = (user as any).timezone;
                 token.avatar = (user as any).avatar;
+                token.userId = (user as any).userId;
             }
             // Allow session.update() to refresh token fields
             if (trigger === 'update' && session) {
@@ -32,6 +33,7 @@ export const authConfig = {
                 (session.user as any).currency = token.currency;
                 (session.user as any).timezone = token.timezone;
                 (session.user as any).avatar = token.avatar;
+                (session.user as any).userId = token.userId;
             }
             return session;
         },

@@ -13,13 +13,21 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
+    const search = searchParams.get('search');
     const page = parseInt(searchParams.get('page') ?? '1');
     const limit = parseInt(searchParams.get('limit') ?? '20');
 
     await dbConnect();
 
-    const query: Record<string, string> = { role: 'freelancer' };
+    const query: Record<string, any> = { role: 'freelancer' };
     if (status) query.status = status;
+    if (search) {
+        query.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } },
+            { userId: { $regex: search, $options: 'i' } },
+        ];
+    }
 
     const [users, total] = await Promise.all([
         User.find(query)

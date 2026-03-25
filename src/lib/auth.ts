@@ -44,6 +44,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     currency: user.currency,
                     timezone: user.timezone,
                     image: user.avatar,
+                    userId: user.userId,
                 };
             },
         }),

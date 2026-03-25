@@ -25,7 +25,7 @@ const navItems = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { data: session } = useSession();
-    const user = session?.user as { name?: string; email?: string; plan?: string } | undefined;
+    const user = session?.user as { name?: string; email?: string; plan?: string; userId?: string } | undefined;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -51,7 +51,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </div>
                         <div className="min-w-0 flex-1">
                             <p className="text-white text-sm font-medium truncate pr-12">{user?.name ?? 'Freelancer'}</p>
-                            <p className="text-slate-400 text-xs truncate">{user?.email ?? ''}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-slate-400 text-[10px] truncate">{user?.email ?? ''}</p>
+                                {user?.userId && <span className="text-purple-400 text-[9px] font-mono border border-purple-500/20 px-1 rounded bg-purple-500/5">{user.userId}</span>}
+                            </div>
                         </div>
                         <div className="absolute top-2 right-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0">
                             {user?.plan ?? 'free'}
@@ -113,7 +116,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             {userMenuOpen && (
                                 <div className="absolute right-0 top-full mt-2 w-56 bg-slate-800 border border-white/10 rounded-xl shadow-xl py-1 z-50">
                                     <div className="px-4 py-3 border-b border-white/10 mb-1">
-                                        <p className="text-sm font-medium text-white">{user?.name}</p>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className="text-sm font-medium text-white">{user?.name}</p>
+                                            {user?.userId && <span className="text-[10px] font-mono text-purple-400">{user.userId}</span>}
+                                        </div>
                                         <p className="text-xs text-slate-400 truncate">{user?.email}</p>
                                         <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
                                             {(user as any)?.plan || 'free'} Plan

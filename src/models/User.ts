@@ -1,9 +1,11 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import Counter from './Counter';
 
 export interface IUser extends Document {
     name: string;
     email: string;
+    userId?: string; // e.g., FH-1001
     password: string;
     role: 'admin' | 'freelancer';
     status: 'pending' | 'active' | 'suspended';
@@ -28,6 +30,7 @@ const UserSchema = new Schema<IUser>(
     {
         name: { type: String, required: true, trim: true },
         email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+        userId: { type: String, unique: true, sparse: true },
         password: { type: String, required: true, select: false, minlength: 8 },
         role: { type: String, enum: ['admin', 'freelancer'], default: 'freelancer' },
         status: { type: String, enum: ['pending', 'active', 'suspended'], default: 'pending' },
@@ -48,8 +51,23 @@ const UserSchema = new Schema<IUser>(
 );
 
 UserSchema.pre('save', async function () {
-    if (!this.isModified('password')) return;
-    this.password = await bcrypt.hash(this.password, 12);
+    // Hash password
+    if (this.isModified('password')) {
+        this.password = await bcrypt.hash(this.password, 12);
+    }
+
+    // Auto-generate User ID for freelancers
+    if (this.isNew && this.role === 'freelancer' && !this.userId) {
+        const counter = await Counter.findOneAndUpdate(
+            { id: 'userId' },
+            { $inc: { seq: 1 } },
+            { new: true, upsert: true }
+        );
+
+        // FH-1001, FH-1002, etc.
+        const seq = (counter?.seq || 0) + 1000;
+        this.userId = `FH-${seq}`;
+    }
 });
 
 UserSchema.methods.comparePassword = async function (candidatePassword: string) {
