@@ -30,6 +30,12 @@ interface Project {
         company?: string;
         whatsapp?: string;
     };
+    revisions?: {
+        _id: string;
+        message: string;
+        status: string;
+        createdAt: string;
+    }[];
 }
 
 export default function ProjectDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -187,6 +193,30 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             </div>
                         </div>
                     </div>
+
+                    {project.revisions && project.revisions.length > 0 && (
+                        <div className="bg-gradient-to-br from-amber-500/5 to-transparent border border-amber-500/20 rounded-2xl p-6 relative overflow-hidden">
+                            <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                                <MessageSquare className="w-5 h-5 text-amber-500" /> Client Revisions Found
+                            </h3>
+                            <div className="space-y-4 relative z-10">
+                                {project.revisions.map((rev) => (
+                                    <div key={rev._id} className="bg-slate-900/50 border border-white/5 rounded-xl p-5">
+                                        <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-3">
+                                            <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${rev.status === 'pending' ? 'bg-amber-500/20 text-amber-500 border border-amber-500/20 animate-pulse' : 'bg-green-500/20 text-green-500 border border-green-500/20'}`}>
+                                                {rev.status}
+                                            </span>
+                                            <span className="text-xs text-slate-500">{new Date(rev.createdAt).toLocaleString()}</span>
+                                        </div>
+                                        <div className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
+                                            <span className="text-purple-400 font-bold mb-1 block">Feedback:</span>
+                                            {rev.message}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">

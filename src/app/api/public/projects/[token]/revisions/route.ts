@@ -41,7 +41,8 @@ export async function POST(
             userId: project.freelancerId,
             title: 'Revision Requested',
             message: `A client requested revisions for the project: "${project.name}"`,
-            type: 'warning'
+            type: 'warning',
+            link: `/dashboard/projects/${project._id}`
         });
 
         return NextResponse.json({ success: true, project });

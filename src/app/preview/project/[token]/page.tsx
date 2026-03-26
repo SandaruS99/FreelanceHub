@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Loader2, ShieldCheck, Download, AlertCircle, Eye, Lock, Unlock, CreditCard, MessageSquareWarning, X } from 'lucide-react';
+import { Loader2, ShieldCheck, Download, AlertCircle, Eye, Lock, Unlock, CreditCard, MessageSquareWarning, X, CheckCircle2 } from 'lucide-react';
 
 export default function ProjectPreviewPage() {
     const { token } = useParams();
@@ -16,6 +16,7 @@ export default function ProjectPreviewPage() {
     const [revisionMessage, setRevisionMessage] = useState('');
     const [clientName, setClientName] = useState('');
     const [revisionLoading, setRevisionLoading] = useState(false);
+    const [revisionSuccess, setRevisionSuccess] = useState(false);
 
     const isSuccess = searchParams.get('success') === 'true';
 
@@ -106,10 +107,8 @@ export default function ProjectPreviewPage() {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to submit revision');
-            setRevisionModalOpen(false);
+            setRevisionSuccess(true);
             setRevisionMessage('');
-            alert('Revision request submitted successfully. The freelancer has been notified.');
-            window.location.reload();
         } catch (err: any) {
             alert(err.message);
         } finally {
@@ -144,7 +143,8 @@ export default function ProjectPreviewPage() {
 
     const isImage = project.deliveryFileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
     const isPdf = project.deliveryFileName?.match(/\.(pdf)$/i);
-    const isViewable = (isImage || isPdf) && project.deliveryFileId;
+    const isVideo = project.deliveryFileName?.match(/\.(mp4|webm|mkv|mov|avi)$/i);
+    const isViewable = (isImage || isPdf || isVideo) && project.deliveryFileId;
     const previewUrl = `/api/public/projects/${token}/preview`;
 
     return (
@@ -211,8 +211,16 @@ export default function ProjectPreviewPage() {
                                     className="max-w-full max-h-[75vh] object-contain shadow-2xl rounded-lg z-10 block"
                                     onContextMenu={(e) => e.preventDefault()}
                                 />
+                            ) : isVideo ? (
+                                <video
+                                    src={previewUrl}
+                                    controls
+                                    className="max-w-full max-h-[75vh] w-full object-contain shadow-2xl rounded-lg z-10 block ring-1 ring-white/10"
+                                    onContextMenu={(e) => e.preventDefault()}
+                                    controlsList="nodownload"
+                                />
                             ) : (
-                                <div className="w-full h-[75vh] relative z-10 bg-white rounded-lg shadow-2xl overflow-hidden">
+                                <div className="w-full h-[75vh] relative z-10 bg-white rounded-lg shadow-2xl overflow-hidden ring-1 ring-white/10">
                                      <iframe
                                         src={`${previewUrl}#toolbar=0`}
                                         className="w-full h-full"
@@ -289,63 +297,84 @@ export default function ProjectPreviewPage() {
                 </div>
             </div>
 
-            {/* Revision Modal */}
             {revisionModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden scale-in">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <MessageSquareWarning className="w-5 h-5 text-amber-500" />
-                                Request Revision
-                            </h3>
-                            <button onClick={() => setRevisionModalOpen(false)} className="p-2 hover:bg-white/5 rounded-lg transition text-slate-400">
-                                <X className="w-5 h-5" />
+                    {revisionSuccess ? (
+                        <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden scale-in p-8 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-6 border border-green-500/20">
+                                <CheckCircle2 className="w-8 h-8 text-green-500" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2">Revision Requested!</h3>
+                            <p className="text-slate-400 text-sm mb-8">
+                                The freelancer has been notified about your requested changes. You will be updated when new files are delivered.
+                            </p>
+                            <button
+                                onClick={() => {
+                                    setRevisionModalOpen(false);
+                                    setRevisionSuccess(false);
+                                    window.location.reload();
+                                }}
+                                className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium text-sm transition"
+                            >
+                                Back to Preview
                             </button>
                         </div>
-
-                        <form onSubmit={handleSubmitRevision} className="p-6 space-y-6">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-2">Your Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={clientName}
-                                    onChange={(e) => setClientName(e.target.value)}
-                                    placeholder="e.g. John Doe"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-2">What needs to be changed?</label>
-                                <textarea
-                                    required
-                                    value={revisionMessage}
-                                    onChange={(e) => setRevisionMessage(e.target.value)}
-                                    placeholder="Please describe the revisions you need..."
-                                    rows={4}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition resize-none"
-                                />
-                            </div>
-
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setRevisionModalOpen(false)}
-                                    className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-sm font-medium transition"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={revisionLoading || !revisionMessage.trim() || !clientName.trim()}
-                                    className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 rounded-xl text-white text-sm font-bold shadow-lg shadow-amber-500/20 transition disabled:opacity-50 flex items-center justify-center gap-2"
-                                >
-                                    {revisionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquareWarning className="w-4 h-4" />}
-                                    Send Request
+                    ) : (
+                        <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden scale-in">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                    <MessageSquareWarning className="w-5 h-5 text-amber-500" />
+                                    Request Revision
+                                </h3>
+                                <button onClick={() => setRevisionModalOpen(false)} className="p-2 hover:bg-white/5 rounded-lg transition text-slate-400">
+                                    <X className="w-5 h-5" />
                                 </button>
                             </div>
-                        </form>
-                    </div>
+
+                            <form onSubmit={handleSubmitRevision} className="p-6 space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-2">Your Name</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={clientName}
+                                        onChange={(e) => setClientName(e.target.value)}
+                                        placeholder="e.g. John Doe"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-2">What needs to be changed?</label>
+                                    <textarea
+                                        required
+                                        value={revisionMessage}
+                                        onChange={(e) => setRevisionMessage(e.target.value)}
+                                        placeholder="Please describe the revisions you need..."
+                                        rows={4}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition resize-none"
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setRevisionModalOpen(false)}
+                                        className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-sm font-medium transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={revisionLoading || !revisionMessage.trim() || !clientName.trim()}
+                                        className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 rounded-xl text-white text-sm font-bold shadow-lg shadow-amber-500/20 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                                    >
+                                        {revisionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquareWarning className="w-4 h-4" />}
+                                        Send Request
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
                 </div>
             )}
 

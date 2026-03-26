@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell, Check, Info, AlertTriangle, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -10,6 +11,7 @@ interface Notification {
     message: string;
     type: 'info' | 'success' | 'warning' | 'error';
     read: boolean;
+    link?: string;
     createdAt: string;
 }
 
@@ -18,6 +20,7 @@ export default function NotificationsDropdown() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
 
     const fetchNotifications = async () => {
         try {
@@ -48,16 +51,21 @@ export default function NotificationsDropdown() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const markAsRead = async (id: string, isAlreadyRead: boolean) => {
-        if (isAlreadyRead) return;
-        try {
-            const res = await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
-            if (res.ok) {
-                setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
-                setUnreadCount(prev => Math.max(0, prev - 1));
+    const handleNotificationClick = async (n: Notification) => {
+        if (!n.read) {
+            try {
+                const res = await fetch(`/api/notifications/${n._id}/read`, { method: 'PATCH' });
+                if (res.ok) {
+                    setNotifications(prev => prev.map(item => item._id === n._id ? { ...item, read: true } : item));
+                    setUnreadCount(prev => Math.max(0, prev - 1));
+                }
+            } catch (error) {
+                console.error('Failed to mark as read:', error);
             }
-        } catch (error) {
-            console.error('Failed to mark as read:', error);
+        }
+        if (n.link) {
+            setOpen(false);
+            router.push(n.link);
         }
     };
 
@@ -122,7 +130,7 @@ export default function NotificationsDropdown() {
                                 {notifications.map((notification) => (
                                     <div
                                         key={notification._id}
-                                        onClick={() => markAsRead(notification._id, notification.read)}
+                                        onClick={() => handleNotificationClick(notification)}
                                         className={`flex items-start gap-3 p-3 rounded-lg transition-colors cursor-pointer ${notification.read
                                                 ? 'hover:bg-white/5 opacity-70'
                                                 : 'bg-white/5 hover:bg-white/10'
