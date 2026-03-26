@@ -211,12 +211,14 @@ export default function ProjectPreviewPage() {
                     <div className="flex flex-wrap items-center justify-center gap-3">
                         {!project.isPaid ? (
                             <>
-                                <button
-                                    onClick={handleSimulatePayment}
-                                    className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-bold text-slate-400 uppercase tracking-widest transition"
-                                >
-                                    Simulate (Dev)
-                                </button>
+                                {process.env.NODE_ENV === 'development' && (
+                                    <button
+                                        onClick={handleSimulatePayment}
+                                        className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-bold text-slate-400 uppercase tracking-widest transition"
+                                    >
+                                        Simulate (Dev)
+                                    </button>
+                                )}
                                 <button
                                     onClick={handlePayHere}
                                     disabled={payLoading}
