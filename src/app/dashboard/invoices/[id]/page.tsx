@@ -58,14 +58,20 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
 
     const handleDownload = () => {
         if (!invoice?.publicToken) return;
-        window.open(`/api/public/invoices/${invoice.publicToken}/download`, '_blank');
+        const link = document.createElement('a');
+        link.href = `/api/public/invoices/${invoice.publicToken}/download`;
+        link.setAttribute('download', '');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const handleWhatsAppShare = () => {
         if (!invoice?.publicToken) return;
         
-        const url = `${window.location.origin}/preview/invoice/${invoice.publicToken}`;
-        const message = encodeURIComponent(`*Hello ${invoice.clientId?.name || 'there'}*, 👋\n\nYour invoice is ready! You can view and securely pay it here:\n\n🔗 *View Invoice:* ${url}\n\nThank you for your business!`);
+        const payUrl = `${window.location.origin}/preview/invoice/${invoice.publicToken}/pay`;
+        const pdfUrl = `${window.location.origin}/api/public/invoices/${invoice.publicToken}/download`;
+        const message = encodeURIComponent(`*Hello ${invoice.clientId?.name || 'there'}*, 👋\n\nYour invoice is ready! \n\n📄 *Download PDF Invoice:* ${pdfUrl}\n💳 *View & Securely Pay:* ${payUrl}\n\nThank you for your business!`);
         
         let targetUrl = '';
         if (invoice.clientId?.whatsapp) {
@@ -80,6 +86,8 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
         } else {
             targetUrl = `https://wa.me/?text=${message}`;
         }
+        
+        handleDownload(); // Automatically download to the sender's device so they can immediately attach it
         
         window.open(targetUrl, '_blank');
         
