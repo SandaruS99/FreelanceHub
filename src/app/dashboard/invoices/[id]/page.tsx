@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, FileText } from 'lucide-react';
+import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, FileText, MessageCircle } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
 
 interface LineItem {
@@ -21,6 +21,7 @@ interface Invoice {
         company?: string;
         email?: string;
         address?: string;
+        whatsapp?: string;
     };
     issueDate: string;
     dueDate: string;
@@ -58,6 +59,33 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
     const handleDownload = () => {
         if (!invoice?.publicToken) return;
         window.open(`/api/public/invoices/${invoice.publicToken}/download`, '_blank');
+    };
+
+    const handleWhatsAppShare = () => {
+        if (!invoice?.publicToken) return;
+        
+        const url = `${window.location.origin}/preview/invoice/${invoice.publicToken}`;
+        const message = encodeURIComponent(`*Hello ${invoice.clientId?.name || 'there'}*, 👋\n\nYour invoice is ready! You can view and securely pay it here:\n\n🔗 *View Invoice:* ${url}\n\nThank you for your business!`);
+        
+        let targetUrl = '';
+        if (invoice.clientId?.whatsapp) {
+            let cleanNumber = invoice.clientId.whatsapp.replace(/\D/g, '');
+            if (cleanNumber.startsWith('0') && cleanNumber.length === 10) {
+                cleanNumber = '94' + cleanNumber.substring(1);
+            }
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            targetUrl = isMobile
+                ? `https://wa.me/${cleanNumber}?text=${message}`
+                : `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${message}`;
+        } else {
+            targetUrl = `https://wa.me/?text=${message}`;
+        }
+        
+        window.open(targetUrl, '_blank');
+        
+        if (invoice.status === 'draft') {
+            updateStatus('sent');
+        }
     };
 
     const handleDelete = async () => {
@@ -155,6 +183,12 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                         className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl transition text-sm font-medium"
                     >
                         <Download className="w-4 h-4" /> Download PDF
+                    </button>
+                    <button
+                        onClick={handleWhatsAppShare}
+                        className="flex items-center gap-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/20 text-[#25D366] px-4 py-2 rounded-xl transition text-sm font-medium"
+                    >
+                        <MessageCircle className="w-4 h-4" /> Share
                     </button>
                     <button
                         onClick={handleDelete}

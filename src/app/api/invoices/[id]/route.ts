@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params;
 
     await dbConnect();
-    const invoice = await Invoice.findOne({ _id: id, freelancerId: userId }).populate('clientId', 'name company email address');
+    const invoice = await Invoice.findOne({ _id: id, freelancerId: userId }).populate('clientId', 'name company email address whatsapp');
 
     if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     return NextResponse.json({ invoice });

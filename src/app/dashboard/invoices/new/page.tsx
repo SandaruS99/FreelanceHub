@@ -3,13 +3,14 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2, Plus, Trash2, Calendar, FileText, Send, X } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Plus, Trash2, Calendar, FileText, Send, X, MessageCircle } from 'lucide-react';
 
 interface Client {
     _id: string;
     name: string;
     email?: string;
     company?: string;
+    whatsapp?: string;
 }
 
 interface LineItem {
@@ -30,6 +31,7 @@ function InvoiceForm() {
 
     const [showSendModal, setShowSendModal] = useState(false);
     const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null);
+    const [createdInvoicePublicToken, setCreatedInvoicePublicToken] = useState<string | null>(null);
     const [sendingEmail, setSendingEmail] = useState(false);
 
     // Default dates: issue today, due in 14 days
@@ -120,6 +122,7 @@ function InvoiceForm() {
 
             const data = await res.json();
             setCreatedInvoiceId(data.invoice._id);
+            setCreatedInvoicePublicToken(data.invoice.publicToken);
             setShowSendModal(true);
         } catch (err: unknown) {
             if (err instanceof Error) {
@@ -143,6 +146,33 @@ function InvoiceForm() {
             router.push('/dashboard/invoices');
             router.refresh();
         }
+    };
+
+    const handleSendWhatsApp = () => {
+        if (!createdInvoicePublicToken || !form.clientId) return;
+        
+        const client = clients.find(c => c._id === form.clientId);
+        const url = `${window.location.origin}/preview/invoice/${createdInvoicePublicToken}`;
+        const message = encodeURIComponent(`*Hello ${client?.name || 'there'}*, 👋\n\nYour invoice is ready! You can view and securely pay it here:\n\n🔗 *View Invoice:* ${url}\n\nThank you for your business!`);
+        
+        let targetUrl = '';
+        if (client?.whatsapp) {
+            let cleanNumber = client.whatsapp.replace(/\D/g, '');
+            if (cleanNumber.startsWith('0') && cleanNumber.length === 10) {
+                cleanNumber = '94' + cleanNumber.substring(1);
+            }
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            targetUrl = isMobile
+                ? `https://wa.me/${cleanNumber}?text=${message}`
+                : `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${message}`;
+        } else {
+            targetUrl = `https://wa.me/?text=${message}`;
+        }
+        
+        window.open(targetUrl, '_blank');
+        
+        router.push('/dashboard/invoices');
+        router.refresh();
     };
 
     const handleSkipEmail = () => {
@@ -421,7 +451,15 @@ function InvoiceForm() {
                                 className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium py-2.5 rounded-xl transition disabled:opacity-50"
                             >
                                 {sendingEmail ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                                Yes, Send Email
+                                Send via Email
+                            </button>
+                            <button
+                                onClick={handleSendWhatsApp}
+                                disabled={sendingEmail}
+                                className="w-full flex justify-center items-center gap-2 bg-[#25D366] hover:bg-[#1ebd5c] text-white font-medium py-2.5 rounded-xl transition shadow-lg shadow-green-500/20"
+                            >
+                                <MessageCircle className="w-5 h-5" />
+                                Send via WhatsApp
                             </button>
                             <button
                                 onClick={handleSkipEmail}
