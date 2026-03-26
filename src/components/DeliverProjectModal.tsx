@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Send, Loader2, Link as LinkIcon, AlertCircle, MessageSquare, Phone, Copy, Check, Upload, File as FileIcon } from 'lucide-react';
+import { X, Send, Loader2, Link as LinkIcon, AlertCircle, MessageSquare, Phone, Copy, Check, Upload, File as FileIcon, CheckCircle2 } from 'lucide-react';
 
 interface DeliverProjectModalProps {
     projectId: string;
@@ -28,6 +28,7 @@ export default function DeliverProjectModal({
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [dragActive, setDragActive] = useState(false);
+    const [successData, setSuccessData] = useState<{ project: any, waUrl: string } | null>(null);
 
     const formatWhatsAppNumber = (num: string) => {
         let clean = num.replace(/\D/g, '');
@@ -80,14 +81,17 @@ export default function DeliverProjectModal({
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Delivery failed');
 
-            // 3. Success! Trigger WhatsApp
+            // 3. Success! Show success step with synchronous WhatsApp link
             const finalPreviewUrl = `${window.location.origin}/preview/project/${data.project.deliveryToken}`;
             const finalMessage = `*Hi ${clientName}!* 🚀\n\nI've finished the project *"${projectName}"* and it's ready for your review!\n\n🔗 *View Secure Preview:* ${finalPreviewUrl}\n\nLooking forward to your feedback!`;
 
             const waUrl = getWhatsAppLink(whatsapp, finalMessage);
-            window.open(waUrl, '_blank');
-
-            onSuccess(data.project);
+            
+            setSuccessData({
+                project: data.project,
+                waUrl
+            });
+            // Note: We don't call onSuccess(data.project) here yet, we will call it when the user closes the success modal.
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -110,6 +114,45 @@ export default function DeliverProjectModal({
             setFile(e.dataTransfer.files[0]);
         }
     };
+
+    if (successData) {
+        return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden scale-in p-8 text-center flex flex-col items-center">
+                    <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-6 border border-green-500/20">
+                        <CheckCircle2 className="w-8 h-8 text-green-500" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Project Delivered!</h3>
+                    <p className="text-slate-400 text-sm mb-8">
+                        The file has been uploaded securely. Click below to notify the client via WhatsApp.
+                    </p>
+
+                    <a
+                        href={successData.waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                            // Automatically close and update parent state after clicking the link
+                            setTimeout(() => {
+                                onSuccess(successData.project);
+                            }, 500);
+                        }}
+                        className="w-full py-4 bg-[#25D366] hover:bg-[#128C7E] rounded-xl text-white font-bold text-sm shadow-lg shadow-[#25D366]/20 transition flex items-center justify-center gap-2 mb-4"
+                    >
+                        <MessageSquare className="w-5 h-5" />
+                        Send WhatsApp Message
+                    </a>
+
+                    <button
+                        onClick={() => onSuccess(successData.project)}
+                        className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium text-sm transition"
+                    >
+                        Skip & Close Mode
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
