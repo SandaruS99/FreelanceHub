@@ -55,6 +55,11 @@ export default function DeliverProjectModal({
         e.preventDefault();
         if (!file) return setError('Please upload a file');
         if (!whatsapp) return setError('Please provide a WhatsApp number for the client');
+        
+        // Vercel Serverless Function 4.5MB limit check
+        if (file.size > 4.5 * 1024 * 1024) {
+            return setError('File exceeds the 4.5MB limit. Please upload a smaller file or compress it.');
+        }
 
         setLoading(true);
         setError(null);
@@ -78,7 +83,16 @@ export default function DeliverProjectModal({
                 body: formData
             });
 
-            const data = await res.json();
+            // Handle non-JSON Vercel error pages (like 413 Payload too large or 504)
+            const resText = await res.text();
+            let data;
+            try {
+                data = JSON.parse(resText);
+            } catch (err) {
+                if (res.status === 413) throw new Error('File is too large to be uploaded.');
+                throw new Error('Server returned an invalid response (not JSON). Please try again.');
+            }
+
             if (!res.ok) throw new Error(data.error || 'Delivery failed');
 
             // 3. Success! Show success step with synchronous WhatsApp link
@@ -155,8 +169,8 @@ export default function DeliverProjectModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-4xl shadow-2xl scale-in my-8">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
                         <Send className="w-5 h-5 text-purple-500" />
@@ -167,23 +181,29 @@ export default function DeliverProjectModal({
                     </button>
                 </div>
 
-                <form onSubmit={handleDeliver} className="p-6 space-y-6">
+                <form onSubmit={handleDeliver} className="p-6 flex flex-col gap-6">
                     {error && (
                         <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
-                            <AlertCircle className="w-4 h-4" />
+                            <AlertCircle className="w-4 h-4 shrink-0" />
                             {error}
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div className="sm:col-span-2">
-                            <label className="block text-sm font-medium text-slate-300 mb-2">Upload Deliverable (Any Format)</label>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* LEFT: File Upload */}
+                        <div className="flex flex-col h-full">
+                            <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center justify-between">
+                                Upload Deliverable
+                                <span className={file && file.size > 4.5 * 1024 * 1024 ? "text-red-400 text-xs" : "text-slate-500 text-xs"}>
+                                    Max 4.5 MB
+                                </span>
+                            </label>
                             <div
                                 onDragEnter={handleDrag}
                                 onDragLeave={handleDrag}
                                 onDragOver={handleDrag}
                                 onDrop={handleDrop}
-                                className={`relative border-2 border-dashed rounded-2xl p-8 transition-all flex flex-col items-center justify-center gap-3 bg-white/[0.02] cursor-pointer
+                                className={`relative border-2 border-dashed rounded-2xl p-8 transition-all flex flex-col items-center justify-center gap-4 bg-white/[0.02] cursor-pointer flex-1 min-h-[300px]
                                     ${dragActive ? 'border-purple-500 bg-purple-500/10 scale-[1.02]' : 'border-white/10 hover:border-white/20'}`}
                             >
                                 <input
@@ -192,94 +212,105 @@ export default function DeliverProjectModal({
                                     onChange={(e) => e.target.files && setFile(e.target.files[0])}
                                 />
                                 {file ? (
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
-                                            <FileIcon className="w-6 h-6" />
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-400 shadow-xl shadow-purple-500/10">
+                                            <FileIcon className="w-8 h-8" />
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-sm font-bold text-white truncate max-w-[200px]">{file.name}</p>
-                                            <p className="text-[10px] text-slate-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                            <p className="font-bold text-white truncate max-w-[250px]">{file.name}</p>
+                                            <p className="text-xs text-slate-400 mt-1">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                                         </div>
+                                        <button 
+                                           type="button" 
+                                           onClick={(e) => { e.preventDefault(); setFile(null); }}
+                                           className="mt-2 text-xs text-red-400 hover:text-red-300 transition underline relative z-10"
+                                        >
+                                            Remove file
+                                        </button>
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
-                                            <Upload className="w-6 h-6" />
+                                        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400">
+                                            <Upload className="w-8 h-8" />
                                         </div>
-                                        <div className="text-center">
-                                            <p className="text-sm font-medium text-white">Click or drag file to upload</p>
-                                            <p className="text-xs text-slate-500 mt-1">Images, PDFs, ZIPs allowed</p>
+                                        <div className="text-center space-y-1">
+                                            <p className="font-medium text-white">Click or drag file to upload</p>
+                                            <p className="text-sm text-slate-500">Images, PDFs, ZIPs allowed</p>
                                         </div>
                                     </>
                                 )}
                             </div>
                         </div>
-                        <div className="sm:col-span-2">
-                            <label className="block text-sm font-medium text-slate-300 mb-2">Client WhatsApp Number</label>
-                            <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                                <input
-                                    type="tel"
-                                    required
-                                    value={whatsapp}
-                                    onChange={(e) => setWhatsapp(e.target.value)}
-                                    placeholder="+1 555 000 0000"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-                                />
+
+                        {/* RIGHT: Metadata & Next Steps */}
+                        <div className="flex flex-col gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Client WhatsApp Number</label>
+                                <div className="relative">
+                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                    <input
+                                        type="tel"
+                                        required
+                                        value={whatsapp}
+                                        onChange={(e) => setWhatsapp(e.target.value)}
+                                        placeholder="+1 555 000 0000"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="bg-purple-900/20 border border-purple-500/20 rounded-xl overflow-hidden flex-1 flex flex-col">
+                                <div className="px-4 py-3 bg-purple-500/20 border-b border-purple-500/20 flex items-center justify-between gap-2 shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <MessageSquare className="w-4 h-4 text-purple-400" />
+                                        <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">WhatsApp Preview</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(previewMessage.replace('TOKEN_WILL_BE_HERE', '...'));
+                                            setCopied(true);
+                                            setTimeout(() => setCopied(false), 2000);
+                                        }}
+                                        className="text-[10px] font-bold text-purple-400 hover:text-white transition flex items-center gap-1"
+                                    >
+                                        {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                        {copied ? 'COPIED' : 'COPY'}
+                                    </button>
+                                </div>
+                                <div className="p-4 flex-1 overflow-y-auto max-h-[160px]">
+                                    <div className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed font-mono italic">
+                                        {previewMessage}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-white/5 border border-white/10 rounded-xl shrink-0">
+                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <AlertCircle className="w-3.5 h-3.5 text-purple-500" />
+                                    Next Steps
+                                </h4>
+                                <ul className="text-[11px] text-slate-500 space-y-1.5 list-disc pl-4">
+                                    <li>Generate secure **view-only preview** with watermarks.</li>
+                                    <li>Automatically prepare professional **WhatsApp link**.</li>
+                                    <li>Update Project status to **Completed**.</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-purple-900/20 border border-purple-500/20 rounded-xl overflow-hidden">
-                        <div className="px-4 py-2 bg-purple-500/20 border-b border-purple-500/20 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                                <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
-                                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">WhatsApp Message Preview</span>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    navigator.clipboard.writeText(previewMessage.replace('TOKEN_WILL_BE_HERE', '...'));
-                                    setCopied(true);
-                                    setTimeout(() => setCopied(false), 2000);
-                                }}
-                                className="text-[10px] font-bold text-purple-400 hover:text-white transition flex items-center gap-1"
-                            >
-                                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                {copied ? 'COPIED' : 'COPY'}
-                            </button>
-                        </div>
-                        <div className="p-4">
-                            <div className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed font-mono italic">
-                                {previewMessage}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                            <AlertCircle className="w-3.5 h-3.5 text-purple-500" />
-                            Next Steps
-                        </h4>
-                        <ul className="text-[11px] text-slate-500 space-y-1.5 list-disc pl-4">
-                            <li>Generate secure **view-only preview** with watermarks.</li>
-                            <li>Automatically prepare professional **WhatsApp link**.</li>
-                            <li>Update Project status to **Completed**.</li>
-                        </ul>
-                    </div>
-
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-sm font-medium transition"
+                            className="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-sm font-medium transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading || !file}
-                            className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-white text-sm font-bold shadow-lg shadow-purple-500/20 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="px-8 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-white text-sm font-bold shadow-lg shadow-purple-500/20 transition disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                             Deliver & Notify
