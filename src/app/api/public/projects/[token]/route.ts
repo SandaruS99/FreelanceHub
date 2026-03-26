@@ -12,7 +12,7 @@ export async function GET(
 
         const project = await Project.findOne({ deliveryToken: token })
             .populate('freelancerId', 'name')
-            .select('name deliveryFile deliveryToken freelancerId isDelivered deliveredAt');
+            .select('name deliveryFile deliveryFileName deliveryToken freelancerId isDelivered deliveredAt isPaid budget currency');
 
         if (!project) {
             return NextResponse.json({ error: 'Invalid or expired preview link' }, { status: 404 });

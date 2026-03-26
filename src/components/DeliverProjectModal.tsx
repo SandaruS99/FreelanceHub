@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Send, Loader2, Link as LinkIcon, AlertCircle, MessageSquare, Phone, Copy, Check } from 'lucide-react';
+import { X, Send, Loader2, Link as LinkIcon, AlertCircle, MessageSquare, Phone, Copy, Check, Upload, File as FileIcon } from 'lucide-react';
 
 interface DeliverProjectModalProps {
     projectId: string;
@@ -22,15 +22,15 @@ export default function DeliverProjectModal({
     onSuccess,
     onClose
 }: DeliverProjectModalProps) {
-    const [deliveryFile, setDeliveryFile] = useState('');
+    const [file, setFile] = useState<File | null>(null);
     const [whatsapp, setWhatsapp] = useState(clientWhatsapp || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
 
     const formatWhatsAppNumber = (num: string) => {
         let clean = num.replace(/\D/g, '');
-        // If it starts with 0 and is 10 digits (Sri Lanka local format), prepend 94
         if (clean.startsWith('0') && clean.length === 10) {
             clean = '94' + clean.substring(1);
         }
@@ -41,7 +41,6 @@ export default function DeliverProjectModal({
         const cleanNumber = formatWhatsAppNumber(number);
         const encodedMsg = encodeURIComponent(message);
 
-        // Use a simple heuristic for mobile detection (could be more robust)
         const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
         return isMobile
@@ -49,11 +48,11 @@ export default function DeliverProjectModal({
             : `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${encodedMsg}`;
     };
 
-    const previewMessage = `*Hi ${clientName}!* 🚀\n\nI've finished the project *"${projectName}"* and it's ready for your review!\n\n🔗 *View Secure Preview:* ${window.location.origin}/preview/project/TOKEN_WILL_BE_HERE\n\nLooking forward to your feedback!`;
+    const previewMessage = `*Hi ${clientName}!* 🚀\n\nI've finished the project *"${projectName}"* and it's ready for your review!\n\n🔗 *View Secure Preview:* ${typeof window !== 'undefined' ? window.location.origin : ''}/preview/project/TOKEN_WILL_BE_HERE\n\nLooking forward to your feedback!`;
 
     const handleDeliver = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!deliveryFile) return setError('Please provide a file URL');
+        if (!file) return setError('Please upload a file');
         if (!whatsapp) return setError('Please provide a WhatsApp number for the client');
 
         setLoading(true);
@@ -70,10 +69,12 @@ export default function DeliverProjectModal({
             }
 
             // 2. Deliver project
+            const formData = new FormData();
+            formData.append('file', file);
+
             const res = await fetch(`/api/projects/${projectId}/deliver`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ deliveryFile })
+                body: formData
             });
 
             const data = await res.json();
@@ -91,6 +92,22 @@ export default function DeliverProjectModal({
             setError(err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+        else if (e.type === 'dragleave') setDragActive(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            setFile(e.dataTransfer.files[0]);
         }
     };
 
@@ -116,22 +133,46 @@ export default function DeliverProjectModal({
                     )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">Project File URL</label>
-                            <div className="relative">
-                                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Upload Deliverable (Any Format)</label>
+                            <div
+                                onDragEnter={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDragOver={handleDrag}
+                                onDrop={handleDrop}
+                                className={`relative border-2 border-dashed rounded-2xl p-8 transition-all flex flex-col items-center justify-center gap-3 bg-white/[0.02] cursor-pointer
+                                    ${dragActive ? 'border-purple-500 bg-purple-500/10 scale-[1.02]' : 'border-white/10 hover:border-white/20'}`}
+                            >
                                 <input
-                                    type="url"
-                                    required
-                                    value={deliveryFile}
-                                    onChange={(e) => setDeliveryFile(e.target.value)}
-                                    placeholder="https://cloudinary.com/your-image.jpg"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm transition"
+                                    type="file"
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    onChange={(e) => e.target.files && setFile(e.target.files[0])}
                                 />
+                                {file ? (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                                            <FileIcon className="w-6 h-6" />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-sm font-bold text-white truncate max-w-[200px]">{file.name}</p>
+                                            <p className="text-[10px] text-slate-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                                            <Upload className="w-6 h-6" />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-sm font-medium text-white">Click or drag file to upload</p>
+                                            <p className="text-xs text-slate-500 mt-1">Images, PDFs, ZIPs allowed</p>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">Client WhatsApp</label>
+                        <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Client WhatsApp Number</label>
                             <div className="relative">
                                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                                 <input
@@ -140,7 +181,7 @@ export default function DeliverProjectModal({
                                     value={whatsapp}
                                     onChange={(e) => setWhatsapp(e.target.value)}
                                     placeholder="+1 555 000 0000"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm transition"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
                                 />
                             </div>
                         </div>
@@ -194,7 +235,7 @@ export default function DeliverProjectModal({
                         </button>
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || !file}
                             className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-white text-sm font-bold shadow-lg shadow-purple-500/20 transition disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

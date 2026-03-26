@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import Project from '@/models/Project';
-import { auth } from '@/lib/auth';
-import { randomBytes } from 'crypto';
-import { logActivity } from '@/lib/activity';
+import File from '@/models/File';
+import crypto from 'crypto';
 
 export async function POST(
     req: NextRequest,
@@ -11,42 +11,60 @@ export async function POST(
 ) {
     try {
         const session = await auth();
-        if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!session || !session.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-        const userId = (session.user as { id: string }).id;
         const { id } = await params;
-        const { deliveryFile, deliveryNote } = await req.json();
+        const formData = await req.formData();
+        const file = formData.get('file') as unknown as File & { arrayBuffer(): Promise<ArrayBuffer>, name: string, type: string, size: number };
 
-        if (!deliveryFile) {
-            return NextResponse.json({ error: 'Delivery file is required' }, { status: 400 });
+        if (!file) {
+            return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
         }
 
         await dbConnect();
 
-        // Generate a unique token for the view-only link
-        const deliveryToken = randomBytes(24).toString('hex');
+        // 1. Check project ownership
+        const project = await Project.findOne({ _id: id, freelancerId: session.user.id });
+        if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-        const updated = await Project.findOneAndUpdate(
-            { _id: id, freelancerId: userId },
-            {
-                deliveryFile,
-                deliveryToken,
-                isDelivered: true,
-                deliveredAt: new Date(),
-                status: 'completed',
-                progress: 100,
-            },
-            { new: true }
-        );
+        // 2. Generate security token for preview
+        const deliveryToken = crypto.randomBytes(32).toString('hex');
 
-        if (!updated) {
-            return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-        }
+        // 3. Store file data in the database
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
 
-        await logActivity(userId, 'Delivered Project', `Project: ${updated.name}`);
+        const newFile = await File.create({
+            name: file.name,
+            mimeType: file.type,
+            size: file.size,
+            data: buffer,
+            projectId: project._id
+        });
 
-        return NextResponse.json({ project: updated });
+        // 4. Update project status
+        project.status = 'completed';
+        project.isDelivered = true;
+        project.deliveredAt = new Date();
+        project.deliveryToken = deliveryToken;
+        project.deliveryFileName = file.name;
+        project.deliveryFileId = newFile._id;
+
+        await project.save();
+
+        return NextResponse.json({
+            message: 'Project delivered successfully',
+            project: {
+                _id: project._id,
+                deliveryToken: project.deliveryToken,
+                isDelivered: project.isDelivered,
+                status: project.status
+            }
+        });
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error('DELIVERY_ERROR:', error);
+        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }

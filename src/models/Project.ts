@@ -21,8 +21,11 @@ export interface IProject extends Document {
     milestones: IMilestone[];
     tags: string[];
     deliveryFile?: string;
+    deliveryFileName?: string;
+    deliveryFileId?: mongoose.Types.ObjectId;
     deliveryToken?: string;
     isDelivered: boolean;
+    isPaid: boolean;
     deliveredAt?: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -54,8 +57,11 @@ const ProjectSchema = new Schema<IProject>(
         milestones: [MilestoneSchema],
         tags: [{ type: String, trim: true }],
         deliveryFile: { type: String },
+        deliveryFileName: { type: String },
+        deliveryFileId: { type: Schema.Types.ObjectId, ref: 'File' },
         deliveryToken: { type: String, unique: true, sparse: true },
         isDelivered: { type: Boolean, default: false },
+        isPaid: { type: Boolean, default: false },
         deliveredAt: { type: Date },
     },
     { timestamps: true }
