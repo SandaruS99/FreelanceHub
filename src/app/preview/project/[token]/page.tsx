@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Loader2, ShieldCheck, Download, AlertCircle, Eye, Lock, Unlock, CreditCard } from 'lucide-react';
+import { Loader2, ShieldCheck, Download, AlertCircle, Eye, Lock, Unlock, CreditCard, MessageSquareWarning, X } from 'lucide-react';
 
 export default function ProjectPreviewPage() {
     const { token } = useParams();
@@ -11,6 +11,11 @@ export default function ProjectPreviewPage() {
     const [loading, setLoading] = useState(true);
     const [payLoading, setPayLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const [revisionModalOpen, setRevisionModalOpen] = useState(false);
+    const [revisionMessage, setRevisionMessage] = useState('');
+    const [clientName, setClientName] = useState('');
+    const [revisionLoading, setRevisionLoading] = useState(false);
 
     const isSuccess = searchParams.get('success') === 'true';
 
@@ -90,6 +95,28 @@ export default function ProjectPreviewPage() {
         window.location.href = `/api/public/projects/${token}/file`;
     };
 
+    const handleSubmitRevision = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setRevisionLoading(true);
+        try {
+            const res = await fetch(`/api/public/projects/${token}/revisions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: revisionMessage, clientName })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to submit revision');
+            setRevisionModalOpen(false);
+            setRevisionMessage('');
+            alert('Revision request submitted successfully. The freelancer has been notified.');
+            window.location.reload();
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            setRevisionLoading(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
@@ -115,10 +142,13 @@ export default function ProjectPreviewPage() {
         );
     }
 
-    const isImage = project.deliveryFileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i) || project.deliveryFile?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+    const isImage = project.deliveryFileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+    const isPdf = project.deliveryFileName?.match(/\.(pdf)$/i);
+    const isViewable = (isImage || isPdf) && project.deliveryFileId;
+    const previewUrl = `/api/public/projects/${token}/preview`;
 
     return (
-        <div className="min-h-screen bg-slate-950 flex flex-col pb-24 sm:pb-32">
+        <div className="min-h-screen bg-slate-950 flex flex-col pb-24 sm:pb-32 relative">
             {/* Header */}
             <header className="border-b border-white/5 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -154,34 +184,45 @@ export default function ProjectPreviewPage() {
             </header>
 
             {/* Viewer */}
-            <main className="flex-1 flex items-center justify-center p-6 md:p-12 relative overflow-hidden backdrop-blur-3xl">
+            <main className="flex-1 flex items-center justify-center p-6 md:p-12 relative overflow-hidden backdrop-blur-3xl z-10">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none" />
 
-                <div className="max-w-6xl w-full bg-slate-900/80 border border-white/10 rounded-3xl shadow-2xl overflow-hidden relative group min-h-[500px] flex items-center justify-center">
-                    <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/20 text-[10px] uppercase font-bold text-white/80 tracking-widest animate-pulse">
+                <div className="max-w-6xl w-full bg-slate-900/80 border border-white/10 rounded-3xl shadow-2xl overflow-hidden relative group min-h-[500px] flex flex-col items-center justify-center">
+                    <div className="absolute top-4 right-4 z-[20] flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/20 text-[10px] uppercase font-bold text-white/80 tracking-widest animate-pulse">
                         <Eye className="w-3 h-3" />
                         Private Preview
                     </div>
 
-                    {isImage && project.deliveryFile ? (
-                        <div className="relative w-full h-full flex items-center justify-center p-8">
-                            {/* Watermark */}
+                    {isViewable ? (
+                        <div className="relative w-full h-full flex items-center justify-center p-8 bg-black/20">
+                            {/* Watermark layer */}
                             {!project.isPaid && (
-                                <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center overflow-hidden opacity-[0.08]">
+                                <div className="absolute inset-0 z-[15] pointer-events-none flex items-center justify-center overflow-hidden opacity-[0.15]">
                                     <div className="text-[20vw] font-black text-white rotate-[-35deg] tracking-tighter select-none whitespace-nowrap uppercase">
                                         SAMPLE
                                     </div>
                                 </div>
                             )}
-                            <img
-                                src={project.deliveryFile}
-                                alt="Preview"
-                                className="max-w-full max-h-[70vh] object-contain shadow-2xl rounded-lg"
-                                onContextMenu={(e) => e.preventDefault()}
-                            />
+                            
+                            {isImage ? (
+                                <img
+                                    src={previewUrl}
+                                    alt="Preview"
+                                    className="max-w-full max-h-[75vh] object-contain shadow-2xl rounded-lg z-10 block"
+                                    onContextMenu={(e) => e.preventDefault()}
+                                />
+                            ) : (
+                                <div className="w-full h-[75vh] relative z-10 bg-white rounded-lg shadow-2xl overflow-hidden">
+                                     <iframe
+                                        src={`${previewUrl}#toolbar=0`}
+                                        className="w-full h-full"
+                                        onContextMenu={(e) => e.preventDefault()}
+                                    />
+                                </div>
+                            )}
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center text-center p-12">
+                        <div className="flex flex-col items-center justify-center text-center p-12 z-10">
                             <div className="w-20 h-20 bg-purple-500/10 rounded-3xl flex items-center justify-center mb-6 border border-purple-500/20">
                                 <FileIcon className="w-10 h-10 text-purple-500" />
                             </div>
@@ -211,6 +252,13 @@ export default function ProjectPreviewPage() {
                     <div className="flex flex-wrap items-center justify-center gap-3">
                         {!project.isPaid ? (
                             <>
+                                <button
+                                    onClick={() => setRevisionModalOpen(true)}
+                                    className="px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white font-bold transition flex items-center gap-2"
+                                >
+                                    <MessageSquareWarning className="w-5 h-5" />
+                                    Request Revision
+                                </button>
                                 {process.env.NODE_ENV === 'development' && (
                                     <button
                                         onClick={handleSimulatePayment}
@@ -240,6 +288,66 @@ export default function ProjectPreviewPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Revision Modal */}
+            {revisionModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden scale-in">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <MessageSquareWarning className="w-5 h-5 text-amber-500" />
+                                Request Revision
+                            </h3>
+                            <button onClick={() => setRevisionModalOpen(false)} className="p-2 hover:bg-white/5 rounded-lg transition text-slate-400">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmitRevision} className="p-6 space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Your Name</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={clientName}
+                                    onChange={(e) => setClientName(e.target.value)}
+                                    placeholder="e.g. John Doe"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">What needs to be changed?</label>
+                                <textarea
+                                    required
+                                    value={revisionMessage}
+                                    onChange={(e) => setRevisionMessage(e.target.value)}
+                                    placeholder="Please describe the revisions you need..."
+                                    rows={4}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition resize-none"
+                                />
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setRevisionModalOpen(false)}
+                                    className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-sm font-medium transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={revisionLoading || !revisionMessage.trim() || !clientName.trim()}
+                                    className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 rounded-xl text-white text-sm font-bold shadow-lg shadow-amber-500/20 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {revisionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquareWarning className="w-4 h-4" />}
+                                    Send Request
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             <style jsx global>{`
                 body {

@@ -6,6 +6,13 @@ export interface IMilestone {
     completed: boolean;
 }
 
+export interface IRevision {
+    message: string;
+    clientName: string;
+    status: 'pending' | 'in-progress' | 'resolved';
+    submittedAt: Date;
+}
+
 export interface IProject extends Document {
     freelancerId: mongoose.Types.ObjectId;
     clientId: mongoose.Types.ObjectId;
@@ -27,6 +34,7 @@ export interface IProject extends Document {
     isDelivered: boolean;
     isPaid: boolean;
     deliveredAt?: Date;
+    revisions: IRevision[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -35,6 +43,13 @@ const MilestoneSchema = new Schema<IMilestone>({
     title: { type: String, required: true },
     dueDate: { type: Date },
     completed: { type: Boolean, default: false },
+});
+
+const RevisionSchema = new Schema<IRevision>({
+    message: { type: String, required: true },
+    clientName: { type: String, default: 'Client' },
+    status: { type: String, enum: ['pending', 'in-progress', 'resolved'], default: 'pending' },
+    submittedAt: { type: Date, default: Date.now },
 });
 
 const ProjectSchema = new Schema<IProject>(
@@ -63,6 +78,7 @@ const ProjectSchema = new Schema<IProject>(
         isDelivered: { type: Boolean, default: false },
         isPaid: { type: Boolean, default: false },
         deliveredAt: { type: Date },
+        revisions: { type: [RevisionSchema], default: [] },
     },
     { timestamps: true }
 );
