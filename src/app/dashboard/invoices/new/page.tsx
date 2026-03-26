@@ -152,8 +152,16 @@ function InvoiceForm() {
         if (!createdInvoicePublicToken || !form.clientId) return;
         
         const client = clients.find(c => c._id === form.clientId);
-        const url = `${window.location.origin}/preview/invoice/${createdInvoicePublicToken}`;
-        const message = encodeURIComponent(`*Hello ${client?.name || 'there'}*, 👋\n\nYour invoice is ready! You can view and securely pay it here:\n\n🔗 *View Invoice:* ${url}\n\nThank you for your business!`);
+        const payUrl = `${window.location.origin}/preview/invoice/${createdInvoicePublicToken}/pay`;
+        const pdfUrl = `${window.location.origin}/api/public/invoices/${createdInvoicePublicToken}/download`;
+        
+        const message = encodeURIComponent(
+            `*Hello ${client?.name || 'there'}*, 👋\n\n` +
+            `Your invoice is ready! You can view and securely pay it here:\n\n` +
+            `💳 *Payment Link:* ${payUrl}\n` +
+            `📄 *Download PDF:* ${pdfUrl}\n\n` +
+            `Thank you for your business!`
+        );
         
         let targetUrl = '';
         if (client?.whatsapp) {
@@ -169,6 +177,15 @@ function InvoiceForm() {
             targetUrl = `https://wa.me/?text=${message}`;
         }
         
+        // 1. Trigger automatic local download for the sender
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.setAttribute('download', `Invoice-${createdInvoicePublicToken}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // 2. Open WhatsApp
         window.open(targetUrl, '_blank');
         
         router.push('/dashboard/invoices');
