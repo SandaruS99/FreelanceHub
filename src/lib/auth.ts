@@ -45,7 +45,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     timezone: user.timezone,
                     image: user.avatar,
                     userId: user.userId,
-                    googleConnected: !!user.googleRefreshToken,
                 };
             },
         }),

@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ArrowLeft, Calendar, Loader2, Trash2, Edit, CheckSquare,
-    AlignLeft, DollarSign, Building2, User, Send, ExternalLink, MessageSquare, Phone, 
-    Video, Plus, Check
+    AlignLeft, DollarSign, Building2, User, Send, ExternalLink, MessageSquare, Phone
 } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
-import { useSession } from 'next-auth/react';
 import DeliverProjectModal from '@/components/DeliverProjectModal';
 
 interface Project {
@@ -30,10 +28,8 @@ interface Project {
         _id: string;
         name: string;
         company?: string;
-        email?: string;
         whatsapp?: string;
     };
-    googleMeetLink?: string;
     revisions?: {
         _id: string;
         message: string;
@@ -51,11 +47,6 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const [updatingProgress, setUpdatingProgress] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [isDeliverModalOpen, setIsDeliverModalOpen] = useState(false);
-    const [creatingMeet, setCreatingMeet] = useState(false);
-    
-    const { data: session } = useSession();
-    const isGoogleConnected = (session?.user as any)?.googleConnected;
-    
     const { format } = useCurrency();
 
     useEffect(() => {
@@ -89,28 +80,6 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             if (data.project) setProject(data.project);
         } finally {
             setUpdatingProgress(false);
-        }
-    };
-
-    const createMeeting = async () => {
-        if (!isGoogleConnected) {
-            router.push('/dashboard/settings?tab=preferences');
-            return;
-        }
-
-        setCreatingMeet(true);
-        try {
-            const res = await fetch(`/api/projects/${id}/meet`, { method: 'POST' });
-            const data = await res.json();
-            if (data.meetLink) {
-                setProject(prev => prev ? { ...prev, googleMeetLink: data.meetLink } : null);
-            } else if (data.error) {
-                alert(data.error);
-            }
-        } catch (error) {
-            alert('Failed to create meeting. Please check your connection.');
-        } finally {
-            setCreatingMeet(false);
         }
     };
 
@@ -317,80 +286,6 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Meet Integration Card */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                <Video className="w-5 h-5 text-purple-400" /> Google Meet
-                            </h3>
-                            {project.googleMeetLink && (
-                                <span className="flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                                    <Check className="w-3 h-3" /> Scheduled
-                                </span>
-                            )}
-                        </div>
-
-                        {project.googleMeetLink ? (
-                            <div className="space-y-4">
-                                <div className="p-3 bg-white/5 border border-white/10 rounded-xl">
-                                    <p className="text-xs text-slate-500 mb-1">Meeting Link</p>
-                                    <a 
-                                        href={project.googleMeetLink} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-sm text-purple-400 font-mono hover:underline break-all"
-                                    >
-                                        {project.googleMeetLink}
-                                    </a>
-                                </div>
-                                <a 
-                                    href={project.googleMeetLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-xl transition shadow-lg shadow-purple-500/20"
-                                >
-                                    Jump to Call
-                                </a>
-                                <button 
-                                    onClick={createMeeting}
-                                    disabled={creatingMeet}
-                                    className="w-full text-xs text-slate-500 hover:text-slate-400 underline transition disabled:opacity-50"
-                                >
-                                    {creatingMeet ? 'Regenerating...' : 'Regenerate Link'}
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <p className="text-sm text-slate-400 leading-relaxed">
-                                    Ready to discuss with {project.clientId?.name || 'the client'}? 
-                                    Create a meeting link instantly.
-                                </p>
-                                {isGoogleConnected ? (
-                                    <button 
-                                        onClick={createMeeting}
-                                        disabled={creatingMeet}
-                                        className="w-full flex items-center justify-center gap-2 bg-white text-slate-900 hover:bg-slate-200 font-bold py-2.5 rounded-xl transition"
-                                    >
-                                        {creatingMeet ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-                                        Schedule Meet
-                                    </button>
-                                ) : (
-                                    <div className="space-y-3">
-                                        <p className="text-[11px] text-amber-400/80 bg-amber-400/5 border border-amber-400/10 p-2.5 rounded-lg text-center">
-                                            Connect Google in Settings to enable one-click meetings.
-                                        </p>
-                                        <Link 
-                                            href="/dashboard/settings?tab=preferences"
-                                            className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium py-2.5 rounded-xl transition text-sm"
-                                        >
-                                            Go to Settings
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-                        )}
                     </div>
 
                     {/* Delivery Info */}

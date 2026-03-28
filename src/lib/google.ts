@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import dbConnect from './db';
 import User from '@/models/User';
 
 const oauth2Client = new google.auth.OAuth2(
@@ -7,17 +8,11 @@ const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_REDIRECT_URI
 );
 
-export function getGoogleAuthUrl() {
-    const scopes = [
-        'https://www.googleapis.com/auth/calendar.events',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile',
-    ];
-
+export async function getAuthUrl() {
     return oauth2Client.generateAuthUrl({
         access_type: 'offline',
-        scope: scopes,
         prompt: 'consent',
+        scope: ['https://www.googleapis.com/auth/calendar.events'],
     });
 }
 
@@ -26,48 +21,37 @@ export async function getTokensFromCode(code: string) {
     return tokens;
 }
 
-export async function createMeetEvent(userId: string, clientEmail: string, projectName: string) {
+export async function createMeetEvent(userId: string, clientEmail: string, projectTitle: string) {
+    await dbConnect();
     const user = await User.findById(userId);
     if (!user || !user.googleRefreshToken) {
         throw new Error('Google account not connected');
     }
 
-    const client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        process.env.GOOGLE_REDIRECT_URI
-    );
-
-    client.setCredentials({
-        refresh_token: user.googleRefreshToken,
+    // Set credentials and refresh if needed
+    oauth2Client.setCredentials({
         access_token: user.googleAccessToken,
+        refresh_token: user.googleRefreshToken,
+        expiry_date: user.googleTokenExpiry?.getTime(),
     });
 
-    const calendar = google.calendar({ version: 'v3', auth: client });
-
-    // Set meeting for tomorrow at 10 AM if no time provided, 
-    // but usually we'll just create a placeholder event
-    const startTime = new Date();
-    startTime.setHours(startTime.getHours() + 24); 
-    startTime.setMinutes(0, 0, 0);
-
-    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
     const event = {
-        summary: `Meeting: ${projectName}`,
-        description: `Project discussion for ${projectName}. Generated via FreelanceHub.`,
+        summary: `Project Meeting: ${projectTitle}`,
+        description: `Meeting scheduled via FreelanceHub for project ${projectTitle}.`,
         start: {
-            dateTime: startTime.toISOString(),
+            dateTime: new Date().toISOString(),
             timeZone: user.timezone || 'UTC',
         },
         end: {
-            dateTime: endTime.toISOString(),
+            dateTime: new Date(Date.now() + 3600000).toISOString(), // 1 hour later
             timeZone: user.timezone || 'UTC',
         },
-        attendees: clientEmail ? [{ email: clientEmail }] : [],
+        attendees: [{ email: clientEmail }],
         conferenceData: {
             createRequest: {
-                requestId: Math.random().toString(36).substring(7),
+                requestId: `meet-${Date.now()}`,
                 conferenceSolutionKey: { type: 'hangoutsMeet' },
             },
         },
@@ -77,7 +61,16 @@ export async function createMeetEvent(userId: string, clientEmail: string, proje
         calendarId: 'primary',
         conferenceDataVersion: 1,
         requestBody: event,
-    } as any);
+    });
+
+    // Save tokens if they were refreshed
+    if (oauth2Client.credentials.access_token && oauth2Client.credentials.access_token !== user.googleAccessToken) {
+        user.googleAccessToken = oauth2Client.credentials.access_token;
+        if (oauth2Client.credentials.expiry_date) {
+            user.googleTokenExpiry = new Date(oauth2Client.credentials.expiry_date);
+        }
+        await user.save();
+    }
 
     return response.data.hangoutLink;
 }

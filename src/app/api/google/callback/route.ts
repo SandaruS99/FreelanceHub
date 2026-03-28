@@ -6,9 +6,7 @@ import User from '@/models/User';
 
 export async function GET(req: NextRequest) {
     const session = await auth();
-    if (!session?.user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const userId = (session.user as any).id;
     const { searchParams } = new URL(req.url);

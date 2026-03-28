@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { User, Lock, Settings, Save, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Calendar, Check } from 'lucide-react';
+import { User, Lock, Settings, Save, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { CurrencyCombobox, TIMEZONES } from '@/components/CurrencyCombobox';
-import { useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
 
 type Tab = 'profile' | 'security' | 'preferences';
 
@@ -41,23 +39,6 @@ export default function SettingsPage() {
     const [tab, setTab] = useState<Tab>('profile');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-    const searchParams = useSearchParams();
-
-    useEffect(() => {
-        const success = searchParams.get('success');
-        const error = searchParams.get('error');
-        const msg = searchParams.get('msg');
-
-        if (success === 'google_connected') {
-            setTab('preferences');
-            setStatus({ text: 'Google Calendar connected successfully!', type: 'success' });
-            update({ googleConnected: true });
-        } else if (error === 'google_no_code') {
-            setStatus({ text: 'Authorization failed: No code returned from Google.', type: 'error' });
-        } else if (error === 'google_failed') {
-            setStatus({ text: `Google connection failed: ${msg || 'Unknown error'}`, type: 'error' });
-        }
-    }, [searchParams]);
 
     // Profile tab
     const [name, setName] = useState(u?.name || '');
@@ -253,46 +234,6 @@ export default function SettingsPage() {
                                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                 Save Preferences
                             </button>
-                        </div>
-
-                        {/* Google Connection Section */}
-                        <div className="mt-8 pt-8 border-t border-white/5">
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                                        <Calendar className="w-4 h-4 text-purple-400" /> Google Calendar
-                                    </h4>
-                                    <p className="text-xs text-slate-400 mt-1">Connect your Google account to automatically generate Google Meet links for projects.</p>
-                                </div>
-                                {u?.googleConnected ? (
-                                    <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                                        <Check className="w-3 h-3" /> Connected
-                                    </span>
-                                ) : (
-                                    <span className="px-3 py-1 bg-slate-800 border border-white/5 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                        Not Linked
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="text-sm text-slate-300">
-                                    {u?.googleConnected 
-                                        ? "Your account is linked! You can now create Google Meet links directly from your project dashboards."
-                                        : "Link your Google account to enable automated meeting scheduling with your clients."
-                                    }
-                                </div>
-                                <a 
-                                    href="/api/google/auth"
-                                    className={`whitespace-nowrap flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
-                                        u?.googleConnected 
-                                            ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
-                                            : 'bg-white text-slate-900 hover:bg-slate-200'
-                                    }`}
-                                >
-                                    {u?.googleConnected ? 'Reconnect Account' : 'Connect Google'}
-                                </a>
-                            </div>
                         </div>
                     </>
                 )}
