@@ -15,6 +15,7 @@ declare module 'next-auth' {
             timezone?: string;
             avatar?: string;
             userId?: string;
+            googleConnected?: boolean;
         } & DefaultSession['user']
     }
 
@@ -29,6 +30,7 @@ declare module 'next-auth' {
         timezone?: string;
         avatar?: string;
         userId?: string;
+        googleConnected?: boolean;
     }
 }
 
@@ -44,6 +46,7 @@ declare module 'next-auth/jwt' {
         timezone?: string;
         avatar?: string;
         userId?: string;
+        googleConnected?: boolean;
     }
 }
 
@@ -62,6 +65,7 @@ export const authConfig = {
                 token.timezone = user.timezone;
                 token.avatar = user.avatar;
                 token.userId = user.userId;
+                token.googleConnected = user.googleConnected;
             }
             // Allow session.update() to refresh token fields
             if (trigger === 'update' && session) {
@@ -81,6 +85,7 @@ export const authConfig = {
                 session.user.timezone = token.timezone;
                 session.user.avatar = token.avatar;
                 session.user.userId = token.userId;
+                session.user.googleConnected = token.googleConnected;
             }
             return session;
         },
