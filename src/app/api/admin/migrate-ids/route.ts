@@ -1,43 +1,49 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import User from '@/models/User';
+import Client from '@/models/Client';
+import Project from '@/models/Project';
 import Counter from '@/models/Counter';
-import { auth } from '@/lib/auth';
 
-/**
- * Temporary migration route to assign IDs to existing freelancers
- */
 export async function GET() {
     try {
-        const session = await auth();
-        if (!session || (session.user as any)?.role !== 'admin') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
         await dbConnect();
 
-        // Find all freelancers without a userId
-        const users = await User.find({
-            role: 'freelancer',
-            userId: { $exists: false }
-        });
+        let updatedClients = 0;
+        let updatedProjects = 0;
 
-        let migratedCount = 0;
-
-        for (const user of users) {
+        // 1. Migrate Clients
+        const clientsWithoutNumber = await Client.find({ clientNumber: { $exists: false } });
+        for (const client of clientsWithoutNumber) {
             const counter = await Counter.findOneAndUpdate(
-                { id: 'userId' },
+                { id: 'clientNumber' },
                 { $inc: { seq: 1 } },
                 { new: true, upsert: true }
             );
+            const seq = (counter?.seq || 0) + 1000;
+            client.clientNumber = `CLI-${seq}`;
+            await client.save();
+            updatedClients++;
+        }
 
-            const seq = counter.seq + 1000;
-            user.userId = `FH-${seq}`;
-            await user.save();
-            migratedCount++;
+        // 2. Migrate Projects
+        const projectsWithoutNumber = await Project.find({ projectNumber: { $exists: false } });
+        for (const project of projectsWithoutNumber) {
+            const counter = await Counter.findOneAndUpdate(
+                { id: 'projectNumber' },
+                { $inc: { seq: 1 } },
+                { new: true, upsert: true }
+            );
+            const seq = (counter?.seq || 0) + 1000;
+            project.projectNumber = `PRJ-${seq}`;
+            await project.save();
+            updatedProjects++;
         }
 
         return NextResponse.json({
-            message: `Migration complete. Total freelancers migrated: ${migratedCount}`
+            success: true,
+            message: `Migrated ${updatedClients} clients and ${updatedProjects} projects.`,
+            updatedClients,
+            updatedProjects
         });
     } catch (error: any) {
         console.error('Migration error:', error);

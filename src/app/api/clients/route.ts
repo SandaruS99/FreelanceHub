@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
             { name: { $regex: search, $options: 'i' } },
             { email: { $regex: search, $options: 'i' } },
             { company: { $regex: search, $options: 'i' } },
+            { clientNumber: { $regex: search, $options: 'i' } },
         ];
     }
 

@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import Counter from './Counter';
 
 export interface IMilestone {
     title: string;
@@ -16,6 +17,7 @@ export interface IRevision {
 export interface IProject extends Document {
     freelancerId: mongoose.Types.ObjectId;
     clientId: mongoose.Types.ObjectId;
+    projectNumber?: string;
     name: string;
     description?: string;
     status: 'draft' | 'active' | 'on-hold' | 'completed' | 'cancelled';
@@ -57,6 +59,7 @@ const ProjectSchema = new Schema<IProject>(
     {
         freelancerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
         clientId: { type: Schema.Types.ObjectId, ref: 'Client', required: true },
+        projectNumber: { type: String, unique: true, sparse: true },
         name: { type: String, required: true, trim: true },
         description: { type: String },
         status: {
@@ -84,5 +87,17 @@ const ProjectSchema = new Schema<IProject>(
     },
     { timestamps: true }
 );
+
+ProjectSchema.pre('save', async function () {
+    if (this.isNew && !this.projectNumber) {
+        const counter = await Counter.findOneAndUpdate(
+            { id: 'projectNumber' },
+            { $inc: { seq: 1 } },
+            { new: true, upsert: true }
+        );
+        const seq = (counter?.seq || 0) + 1000;
+        this.projectNumber = `PRJ-${seq}`;
+    }
+});
 
 export default mongoose.models.Project || mongoose.model<IProject>('Project', ProjectSchema);

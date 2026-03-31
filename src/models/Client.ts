@@ -1,7 +1,9 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import Counter from './Counter';
 
 export interface IClient extends Document {
     freelancerId: mongoose.Types.ObjectId;
+    clientNumber?: string;
     name: string;
     company?: string;
     email?: string;
@@ -21,6 +23,7 @@ export interface IClient extends Document {
 const ClientSchema = new Schema<IClient>(
     {
         freelancerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+        clientNumber: { type: String, unique: true, sparse: true },
         name: { type: String, required: true, trim: true },
         company: { type: String, trim: true },
         email: { type: String, lowercase: true, trim: true },
@@ -36,5 +39,17 @@ const ClientSchema = new Schema<IClient>(
     },
     { timestamps: true }
 );
+
+ClientSchema.pre('save', async function () {
+    if (this.isNew && !this.clientNumber) {
+        const counter = await Counter.findOneAndUpdate(
+            { id: 'clientNumber' },
+            { $inc: { seq: 1 } },
+            { new: true, upsert: true }
+        );
+        const seq = (counter?.seq || 0) + 1000;
+        this.clientNumber = `CLI-${seq}`;
+    }
+});
 
 export default mongoose.models.Client || mongoose.model<IClient>('Client', ClientSchema);

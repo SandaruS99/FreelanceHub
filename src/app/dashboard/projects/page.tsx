@@ -6,6 +6,7 @@ import { Plus, Search, Calendar, CheckSquare, Loader2, ArrowRight } from 'lucide
 
 interface Project {
     _id: string;
+    projectNumber?: string;
     name: string;
     clientId?: {
         _id: string;
@@ -44,6 +45,7 @@ export default function ProjectsPage() {
 
     const filteredProjects = projects.filter(p =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
+        (p.projectNumber || '').toLowerCase().includes(search.toLowerCase()) ||
         p.clientId?.name.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -123,60 +125,74 @@ export default function ProjectsPage() {
                     </Link>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredProjects.map((project) => (
-                        <Link
-                            key={project._id}
-                            href={`/dashboard/projects/${project._id}`}
-                            className="bg-white/5 border border-white/10 hover:border-purple-500/30 rounded-2xl p-5 hover:bg-white/10 transition group flex flex-col h-full"
-                        >
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="text-white font-semibold mb-1 group-hover:text-purple-400 transition">{project.name}</h3>
-                                    {project.clientId ? (
-                                        <p className="text-slate-400 text-sm">{project.clientId.name}</p>
-                                    ) : (
-                                        <p className="text-slate-500 text-sm italic">No client assigned</p>
-                                    )}
-                                </div>
-                                <span className={`text-xs px-2 py-0.5 rounded border capitalize whitespace-nowrap ${statusColors[project.status]}`}>
-                                    {project.status}
-                                </span>
-                            </div>
-
-                            <div className="space-y-3 mb-6 flex-1">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-400 flex items-center gap-1.5"><Calendar className="w-4 h-4" /> Due Date</span>
-                                    <span className="text-slate-300">
-                                        {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not set'}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-400 flex items-center gap-1.5"><CheckSquare className="w-4 h-4" /> Priority</span>
-                                    <span className={`capitalize font-medium ${priorityColors[project.priority]}`}>{project.priority}</span>
-                                </div>
-
-                                <div className="mt-4 pt-4 border-t border-white/5">
-                                    <div className="flex justify-between text-xs mb-1.5">
-                                        <span className="text-slate-400">Progress</span>
-                                        <span className="text-white">{project.progress}%</span>
-                                    </div>
-                                    <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-                                        <div
-                                            className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full"
-                                            style={{ width: `${project.progress}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-end">
-                                <span className="text-purple-400 text-sm font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0">
-                                    Manage <ArrowRight className="w-3.5 h-3.5" />
-                                </span>
-                            </div>
-                        </Link>
-                    ))}
+                <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-slate-400">
+                            <thead className="bg-white/[0.02] border-b border-white/10 text-slate-300">
+                                <tr>
+                                    <th className="px-6 py-4 font-medium">Project ID</th>
+                                    <th className="px-6 py-4 font-medium">Project Name</th>
+                                    <th className="px-6 py-4 font-medium">Client</th>
+                                    <th className="px-6 py-4 font-medium">Progress</th>
+                                    <th className="px-6 py-4 font-medium">Due Date</th>
+                                    <th className="px-6 py-4 font-medium">Status</th>
+                                    <th className="px-6 py-4 font-medium text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {filteredProjects.map((project) => (
+                                    <tr key={project._id} className="hover:bg-white/[0.02] transition group">
+                                        <td className="px-6 py-4 font-medium text-white">
+                                            {project.projectNumber || '-'}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-white font-medium group-hover:text-purple-400 transition">
+                                                {project.name}
+                                            </div>
+                                            <div className={`text-xs capitalize font-medium mt-1 ${priorityColors[project.priority]}`}>
+                                                {project.priority} priority
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {project.clientId ? (
+                                                <span className="text-slate-300">
+                                                    {project.clientId.name}
+                                                </span>
+                                            ) : (
+                                                <span className="text-slate-500 italic">No client</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-24 bg-white/10 rounded-full h-1.5 overflow-hidden shrink-0">
+                                                    <div
+                                                        className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full"
+                                                        style={{ width: `${project.progress}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-xs text-white">{project.progress}%</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-300">
+                                            {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not set'}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded border capitalize whitespace-nowrap ${statusColors[project.status]}`}>
+                                                {project.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Link href={`/dashboard/projects/${project._id}`} className="text-purple-400 hover:text-purple-300 flex items-center gap-1 font-medium">
+                                                    Manage <ArrowRight className="w-4 h-4" />
+                                                </Link>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>
