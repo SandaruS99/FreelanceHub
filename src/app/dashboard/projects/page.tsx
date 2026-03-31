@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Calendar, CheckSquare, Loader2, ArrowRight } from 'lucide-react';
+import { Plus, Search, Calendar, Loader2, ArrowRight, CheckSquare } from 'lucide-react';
+import { PROJECT_CATEGORIES } from '@/lib/projectCategories';
 
 interface Project {
     _id: string;
     projectNumber?: string;
     name: string;
+    category?: string;
     clientId?: {
         _id: string;
         name: string;
@@ -149,8 +151,15 @@ export default function ProjectsPage() {
                                             <div className="text-white font-medium group-hover:text-purple-400 transition">
                                                 {project.name}
                                             </div>
-                                            <div className={`text-xs capitalize font-medium mt-1 ${priorityColors[project.priority]}`}>
-                                                {project.priority} priority
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <div className={`text-xs capitalize font-medium ${priorityColors[project.priority]}`}>
+                                                    {project.priority} priority
+                                                </div>
+                                                {project.category && (
+                                                    <div className="text-[10px] px-1.5 py-0.5 rounded border bg-slate-500/10 text-slate-400 border-slate-500/20 font-medium">
+                                                        {PROJECT_CATEGORIES.find(c => c.id === project.category)?.label || project.category}
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

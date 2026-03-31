@@ -19,6 +19,7 @@ export interface IProject extends Document {
     clientId: mongoose.Types.ObjectId;
     projectNumber?: string;
     name: string;
+    category?: string;
     description?: string;
     status: 'draft' | 'active' | 'on-hold' | 'completed' | 'cancelled';
     priority: 'low' | 'medium' | 'high';
@@ -61,6 +62,7 @@ const ProjectSchema = new Schema<IProject>(
         clientId: { type: Schema.Types.ObjectId, ref: 'Client', required: true },
         projectNumber: { type: String, unique: true, sparse: true },
         name: { type: String, required: true, trim: true },
+        category: { type: String, trim: true },
         description: { type: String },
         status: {
             type: String,

@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Calendar, Loader2, DollarSign, AlignLeft, Plus, Trash2, ListChecks } from 'lucide-react';
+import { ArrowLeft, Save, Calendar, Loader2, DollarSign, AlignLeft, Plus, Trash2, ListChecks, Tags } from 'lucide-react';
+import { PROJECT_CATEGORIES, CATEGORY_GROUPS } from '@/lib/projectCategories';
 
 interface Client {
     _id: string;
@@ -27,6 +28,7 @@ function ProjectForm() {
     const [form, setForm] = useState({
         name: '',
         clientId: preSelectedClient || '',
+        category: '',
         description: '',
         status: 'draft',
         priority: 'medium',
@@ -159,6 +161,27 @@ function ProjectForm() {
                                         <option key={c._id} value={c._id} className="bg-slate-800">{c.name}</option>
                                     ))}
                                 </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1.5">Project Category</label>
+                                <div className="relative">
+                                    <Tags className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                    <select
+                                        value={form.category}
+                                        onChange={(e) => update('category', e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition appearance-none"
+                                    >
+                                        <option value="" className="bg-slate-800 text-slate-500">Select a category...</option>
+                                        {CATEGORY_GROUPS.map(group => (
+                                            <optgroup key={group} label={group} className="bg-slate-800 text-purple-400 font-semibold">
+                                                {PROJECT_CATEGORIES.filter(c => c.group === group).map(c => (
+                                                    <option key={c.id} value={c.id} className="text-white font-normal">{c.label}</option>
+                                                ))}
+                                            </optgroup>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             <div>
