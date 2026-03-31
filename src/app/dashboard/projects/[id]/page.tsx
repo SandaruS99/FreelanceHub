@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ArrowLeft, Calendar, Loader2, Trash2, Edit, CheckSquare,
-    AlignLeft, DollarSign, Building2, User, Send, ExternalLink, MessageSquare, Phone
+    AlignLeft, DollarSign, Building2, User, Send, ExternalLink,
+    MessageSquare, Video, Copy, Check, AlertCircle
 } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
 import DeliverProjectModal from '@/components/DeliverProjectModal';
+import ScheduleMeetModal from '@/components/ScheduleMeetModal';
 
 interface Project {
     _id: string;
@@ -24,9 +26,11 @@ interface Project {
     deliveryToken?: string;
     isDelivered?: boolean;
     deliveredAt?: string;
+    googleMeetLink?: string;
     clientId?: {
         _id: string;
         name: string;
+        email?: string;
         company?: string;
         whatsapp?: string;
     };
@@ -47,6 +51,8 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const [updatingProgress, setUpdatingProgress] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [isDeliverModalOpen, setIsDeliverModalOpen] = useState(false);
+    const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
+    const [meetLinkCopied, setMeetLinkCopied] = useState(false);
     const { format } = useCurrency();
 
     useEffect(() => {
@@ -81,6 +87,13 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
         } finally {
             setUpdatingProgress(false);
         }
+    };
+
+    const copyMeetLink = async () => {
+        if (!project?.googleMeetLink) return;
+        await navigator.clipboard.writeText(project.googleMeetLink);
+        setMeetLinkCopied(true);
+        setTimeout(() => setMeetLinkCopied(false), 2000);
     };
 
     const statusColors: Record<string, string> = {
@@ -130,7 +143,15 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* Schedule Meet Button */}
+                    <button
+                        onClick={() => setIsMeetModalOpen(true)}
+                        className="flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 hover:text-blue-300 px-4 py-2 rounded-xl transition text-sm font-medium"
+                    >
+                        <Video className="w-4 h-4" />
+                        Schedule Meet
+                    </button>
                     <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl transition text-sm font-medium">
                         <Edit className="w-4 h-4" /> Edit
                     </button>
@@ -246,6 +267,11 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                 <Building2 className="w-3 h-3 inline mr-1" />{project.clientId.company}
                                             </span>
                                         )}
+                                        {project.clientId.email && (
+                                            <span className="block text-xs text-slate-500 font-normal mt-0.5">
+                                                {project.clientId.email}
+                                            </span>
+                                        )}
                                     </Link>
                                 ) : (
                                     <span className="text-slate-500 italic text-sm">Internal Project</span>
@@ -288,6 +314,67 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                         </div>
                     </div>
 
+                    {/* Google Meet Card */}
+                    <div className="bg-gradient-to-br from-blue-500/5 to-indigo-600/5 border border-blue-500/15 rounded-2xl p-6">
+                        <h3 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
+                            <Video className="w-4 h-4 text-blue-400" /> Google Meet
+                        </h3>
+
+                        {project.googleMeetLink ? (
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 p-3 bg-white/5 border border-white/10 rounded-xl">
+                                    <input
+                                        readOnly
+                                        value={project.googleMeetLink}
+                                        className="bg-transparent border-none text-xs text-blue-400 font-mono flex-1 focus:outline-none truncate"
+                                    />
+                                    <button
+                                        onClick={copyMeetLink}
+                                        className="p-1.5 hover:bg-white/10 rounded-lg transition text-slate-400 hover:text-white shrink-0"
+                                        title="Copy link"
+                                    >
+                                        {meetLinkCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                    </button>
+                                    <a
+                                        href={project.googleMeetLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 hover:bg-white/10 rounded-lg transition text-slate-400 hover:text-white shrink-0"
+                                        title="Open Meet"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                </div>
+                                <button
+                                    onClick={() => setIsMeetModalOpen(true)}
+                                    className="w-full flex items-center justify-center gap-2 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 hover:text-blue-300 text-xs font-medium rounded-xl transition"
+                                >
+                                    <Video className="w-3.5 h-3.5" />
+                                    Schedule New Meeting
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <p className="text-xs text-slate-400 leading-relaxed">
+                                    No meeting scheduled yet. Schedule a Google Meet with your client directly from this project.
+                                </p>
+                                {!project.clientId?.email && (
+                                    <div className="flex items-start gap-2 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                                        <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                                        <p className="text-xs text-amber-400">Client has no email — add one to enable meeting scheduling.</p>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() => setIsMeetModalOpen(true)}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600/80 to-indigo-600/80 hover:from-blue-600 hover:to-indigo-600 text-white text-sm font-semibold rounded-xl transition shadow-lg shadow-blue-500/10"
+                                >
+                                    <Video className="w-4 h-4" />
+                                    Schedule Google Meet
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Delivery Info */}
                     {project.isDelivered && (
                         <div className="bg-gradient-to-br from-purple-500/10 to-indigo-600/10 border border-purple-500/20 rounded-2xl p-6">
@@ -320,17 +407,14 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                         onClick={() => {
                                             const previewUrl = `${window.location.origin}/preview/project/${project.deliveryToken}`;
                                             const message = encodeURIComponent(`*Hi ${project.clientId?.name}!* 🚀\n\nI've finished the project *"${project.name}"* and it's ready for your review!\n\n🔗 *View Secure Preview:* ${previewUrl}\n\nLooking forward to your feedback!`);
-
                                             let cleanNumber = project.clientId?.whatsapp?.replace(/\D/g, '') || '';
                                             if (cleanNumber.startsWith('0') && cleanNumber.length === 10) {
                                                 cleanNumber = '94' + cleanNumber.substring(1);
                                             }
-
                                             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                                             const url = isMobile
                                                 ? `https://wa.me/${cleanNumber}?text=${message}`
                                                 : `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${message}`;
-
                                             window.open(url, '_blank');
                                         }}
                                         className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1.5 transition"
@@ -357,6 +441,20 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                         setIsDeliverModalOpen(false);
                     }}
                     onClose={() => setIsDeliverModalOpen(false)}
+                />
+            )}
+
+            {isMeetModalOpen && (
+                <ScheduleMeetModal
+                    projectId={project._id}
+                    projectName={project.name}
+                    clientName={project.clientId?.name || 'Client'}
+                    clientEmail={project.clientId?.email}
+                    onSuccess={(meetLink) => {
+                        setProject(prev => prev ? { ...prev, googleMeetLink: meetLink } : prev);
+                        setIsMeetModalOpen(false);
+                    }}
+                    onClose={() => setIsMeetModalOpen(false)}
                 />
             )}
         </div>

@@ -35,6 +35,7 @@ export interface IProject extends Document {
     isPaid: boolean;
     deliveredAt?: Date;
     revisions: IRevision[];
+    googleMeetLink?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -79,6 +80,7 @@ const ProjectSchema = new Schema<IProject>(
         isPaid: { type: Boolean, default: false },
         deliveredAt: { type: Date },
         revisions: { type: [RevisionSchema], default: [] },
+        googleMeetLink: { type: String },
     },
     { timestamps: true }
 );

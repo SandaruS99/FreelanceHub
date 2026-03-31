@@ -22,6 +22,10 @@ export interface IUser extends Document {
     verificationToken?: string;
     resetPasswordToken?: string;
     resetPasswordExpires?: Date;
+    // Google OAuth tokens
+    googleAccessToken?: string;
+    googleRefreshToken?: string;
+    googleTokenExpiry?: Date;
     createdAt: Date;
     updatedAt: Date;
     comparePassword(candidatePassword: string): Promise<boolean>;
@@ -48,6 +52,10 @@ const UserSchema = new Schema<IUser>(
         verificationToken: { type: String },
         resetPasswordToken: { type: String },
         resetPasswordExpires: { type: Date },
+        // Google OAuth
+        googleAccessToken: { type: String },
+        googleRefreshToken: { type: String },
+        googleTokenExpiry: { type: Date },
     },
     { timestamps: true }
 );
