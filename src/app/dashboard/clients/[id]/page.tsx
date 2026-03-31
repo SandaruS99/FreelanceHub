@@ -8,6 +8,7 @@ import {
     Trash2, Edit, Calendar, CheckSquare, FileText, Plus, Circle
 } from 'lucide-react';
 import { useCurrency } from '@/lib/useCurrency';
+import { getLabelColorClass } from '@/lib/clientLabels';
 import EditClientModal from '@/components/EditClientModal';
 
 interface Client {
@@ -222,10 +223,10 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
 
                         {client.tags.length > 0 && (
                             <div className="mt-6 pt-6 border-t border-white/5">
-                                <p className="text-sm font-medium text-slate-300 mb-3">Tags</p>
+                                <p className="text-sm font-medium text-slate-300 mb-3">Labels</p>
                                 <div className="flex flex-wrap gap-2">
                                     {client.tags.map(tag => (
-                                        <span key={tag} className="px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-300 text-xs font-medium">
+                                        <span key={tag} className={`px-2.5 py-1 rounded border text-xs font-medium whitespace-nowrap ${getLabelColorClass(tag)}`}>
                                             {tag}
                                         </span>
                                     ))}

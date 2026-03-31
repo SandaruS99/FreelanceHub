@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Mail, Phone, Building2, MoreVertical, Loader2, ArrowRight } from 'lucide-react';
+import { getLabelColorClass } from '@/lib/clientLabels';
 
 interface Client {
     _id: string;
@@ -104,6 +105,7 @@ export default function ClientsPage() {
                                     <th className="px-6 py-4 font-medium">Client ID</th>
                                     <th className="px-6 py-4 font-medium">Client</th>
                                     <th className="px-6 py-4 font-medium">Contact</th>
+                                    <th className="px-6 py-4 font-medium">Labels</th>
                                     <th className="px-6 py-4 font-medium">Status</th>
                                     <th className="px-6 py-4 font-medium text-right">Actions</th>
                                 </tr>
@@ -143,6 +145,19 @@ export default function ClientsPage() {
                                                 </div>
                                             )}
                                             {!client.email && !client.phone && <span className="text-slate-600 italic">No contact info</span>}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {client.tags && client.tags.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {client.tags.map(tag => (
+                                                        <span key={tag} className={`px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider font-bold whitespace-nowrap ${getLabelColorClass(tag)}`}>
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-500 italic text-xs">None</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded border capitalize ${statusColors[client.status]}`}>

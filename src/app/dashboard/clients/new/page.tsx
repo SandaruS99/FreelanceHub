@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Building2, Mail, Phone, MapPin, Globe, Loader2, Tags } from 'lucide-react';
+import { CLIENT_LABELS, getLabelColorClass } from '@/lib/clientLabels';
 
 export default function NewClientPage() {
     const router = useRouter();
@@ -24,20 +25,12 @@ export default function NewClientPage() {
         tags: [] as string[],
     });
 
-    const [tagInput, setTagInput] = useState('');
-
-    const handleAddTag = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && tagInput.trim()) {
-            e.preventDefault();
-            if (!form.tags.includes(tagInput.trim())) {
-                setForm({ ...form, tags: [...form.tags, tagInput.trim()] });
-            }
-            setTagInput('');
+    const toggleTag = (labelName: string) => {
+        if (form.tags.includes(labelName)) {
+            setForm({ ...form, tags: form.tags.filter((t) => t !== labelName) });
+        } else {
+            setForm({ ...form, tags: [...form.tags, labelName] });
         }
-    };
-
-    const removeTag = (tagToRemove: string) => {
-        setForm({ ...form, tags: form.tags.filter((t) => t !== tagToRemove) });
     };
 
     const update = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
@@ -247,31 +240,33 @@ export default function NewClientPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1.5">Tags</label>
-                                <div className="relative mb-2">
-                                    <Tags className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                                    <input
-                                        type="text"
-                                        value={tagInput}
-                                        onChange={(e) => setTagInput(e.target.value)}
-                                        onKeyDown={handleAddTag}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
-                                        placeholder="Type & press Enter"
-                                    />
+                                <label className="block text-sm font-medium text-slate-300 mb-3">Client Labels</label>
+                                <div className="space-y-4">
+                                    {(['Lifecycle', 'Financial', 'Management'] as const).map(category => (
+                                        <div key={category}>
+                                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">{category}</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {CLIENT_LABELS.filter(l => l.category === category).map((label) => {
+                                                    const isSelected = form.tags.includes(label.label);
+                                                    return (
+                                                        <button
+                                                            key={label.id}
+                                                            type="button"
+                                                            onClick={() => toggleTag(label.label)}
+                                                            className={`text-xs font-medium px-2.5 py-1 rounded border transition-all ${
+                                                                isSelected 
+                                                                    ? label.colorClass 
+                                                                    : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'
+                                                            }`}
+                                                        >
+                                                            {label.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                {form.tags.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mt-3">
-                                        {form.tags.map((tag) => (
-                                            <span key={tag} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-medium">
-                                                {tag}
-                                                <button type="button" onClick={() => removeTag(tag)} className="hover:text-white transition">
-                                                    &times;
-                                                </button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                                <p className="text-slate-500 text-xs mt-2">Example: VIP, Past Client, Web Design</p>
                             </div>
                         </div>
                     </div>
