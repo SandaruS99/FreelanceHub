@@ -116,21 +116,9 @@ export default function EditClientModal({ client, onSuccess, onClose }: EditClie
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-1.5">Phone</label>
-                            <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                                <input
-                                    type="tel"
-                                    value={form.phone}
-                                    onChange={(e) => update('phone', e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
-                                />
-                            </div>
-                        </div>
-                        <div>
                             <label className="block text-sm font-medium text-slate-300 mb-1.5">WhatsApp Number</label>
                             <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 text-purple-400" />
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400" />
                                 <input
                                     type="tel"
                                     value={form.whatsapp}
@@ -165,6 +153,31 @@ export default function EditClientModal({ client, onSuccess, onClose }: EditClie
                                     className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
                                 />
                             </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-1.5">Country</label>
+                            <div className="relative">
+                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                <input
+                                    type="text"
+                                    value={form.country}
+                                    onChange={(e) => update('country', e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Address</label>
+                        <div className="relative">
+                            <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                            <textarea
+                                rows={3}
+                                value={form.address}
+                                onChange={(e) => update('address', e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
+                            />
                         </div>
                     </div>
 
