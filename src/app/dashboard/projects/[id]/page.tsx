@@ -11,10 +11,13 @@ import {
 import { useCurrency } from '@/lib/useCurrency';
 import DeliverProjectModal from '@/components/DeliverProjectModal';
 import ScheduleMeetModal from '@/components/ScheduleMeetModal';
+import EditProjectModal from '@/components/EditProjectModal';
+import { PROJECT_CATEGORIES } from '@/lib/projectCategories';
 
 interface Project {
     _id: string;
     name: string;
+    category?: string;
     description?: string;
     status: string;
     priority: string;
@@ -52,6 +55,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const [deleting, setDeleting] = useState(false);
     const [isDeliverModalOpen, setIsDeliverModalOpen] = useState(false);
     const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [meetLinkCopied, setMeetLinkCopied] = useState(false);
     const { format } = useCurrency();
 
@@ -140,6 +144,11 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             <span className={`text-xs px-2.5 py-0.5 rounded capitalize border ${statusColors[project.status]}`}>
                                 {project.status}
                             </span>
+                            {project.category && (
+                                <span className="text-[11px] px-2 py-0.5 rounded border bg-slate-500/10 text-slate-400 border-slate-500/20 font-medium whitespace-nowrap">
+                                    {PROJECT_CATEGORIES.find(c => c.id === project.category)?.label || project.category}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -152,7 +161,10 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                         <Video className="w-4 h-4" />
                         Schedule Meet
                     </button>
-                    <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl transition text-sm font-medium">
+                    <button 
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl transition text-sm font-medium"
+                    >
                         <Edit className="w-4 h-4" /> Edit
                     </button>
                     <button
@@ -455,6 +467,18 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                         setIsMeetModalOpen(false);
                     }}
                     onClose={() => setIsMeetModalOpen(false)}
+                />
+            )}
+
+            {isEditModalOpen && (
+                <EditProjectModal
+                    project={project}
+                    onSuccess={(updated) => {
+                        setProject(updated);
+                        setIsEditModalOpen(false);
+                        router.refresh();
+                    }}
+                    onClose={() => setIsEditModalOpen(false)}
                 />
             )}
         </div>
