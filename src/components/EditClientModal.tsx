@@ -17,7 +17,6 @@ export default function EditClientModal({ client, onSuccess, onClose }: EditClie
         name: client.name || '',
         company: client.company || '',
         email: client.email || '',
-        phone: client.phone || '',
         whatsapp: client.whatsapp || '',
         address: client.address || '',
         country: client.country || '',
@@ -173,7 +172,7 @@ export default function EditClientModal({ client, onSuccess, onClose }: EditClie
                         <div className="relative">
                             <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                             <textarea
-                                rows={3}
+                                rows={5}
                                 value={form.address}
                                 onChange={(e) => update('address', e.target.value)}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
