@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, CheckCircle, XCircle, Clock, Loader2, RefreshCw, Trash2, FileClock, X } from 'lucide-react';
+import { Search, CheckCircle, Clock, Loader2, RefreshCw, Trash2, FileClock, X, Bell, Send, ShieldOff } from 'lucide-react';
 
 interface Freelancer {
     _id: string;
@@ -20,6 +20,13 @@ const statusConfig = {
     suspended: { label: 'Suspended', class: 'bg-red-500/20 text-red-400 border-red-500/30' },
 };
 
+const notificationTypes = [
+    { value: 'info', label: 'Info', color: 'bg-blue-500/20 text-blue-400' },
+    { value: 'warning', label: 'Warning', color: 'bg-amber-500/20 text-amber-400' },
+    { value: 'error', label: 'Alert', color: 'bg-red-500/20 text-red-400' },
+    { value: 'success', label: 'Success', color: 'bg-green-500/20 text-green-400' },
+];
+
 export default function FreelancersPage() {
     const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
     const [total, setTotal] = useState(0);
@@ -30,6 +37,12 @@ export default function FreelancersPage() {
     const [selectedUser, setSelectedUser] = useState<Freelancer | null>(null);
     const [logs, setLogs] = useState<any[]>([]);
     const [loadingLogs, setLoadingLogs] = useState(false);
+
+    // Notify modal state
+    const [notifyTarget, setNotifyTarget] = useState<Freelancer | null>(null);
+    const [notifyForm, setNotifyForm] = useState({ title: '', message: '', type: 'info' });
+    const [notifyLoading, setNotifyLoading] = useState(false);
+    const [notifySuccess, setNotifySuccess] = useState('');
 
     const fetchFreelancers = useCallback(async () => {
         setLoading(true);
@@ -80,6 +93,30 @@ export default function FreelancersPage() {
             console.error('Failed to fetch logs:', error);
         } finally {
             setLoadingLogs(false);
+        }
+    };
+
+    const openNotifyModal = (user: Freelancer) => {
+        setNotifyTarget(user);
+        setNotifyForm({ title: '', message: '', type: 'info' });
+        setNotifySuccess('');
+    };
+
+    const sendNotification = async () => {
+        if (!notifyTarget || !notifyForm.title || !notifyForm.message) return;
+        setNotifyLoading(true);
+        try {
+            const res = await fetch(`/api/admin/freelancers/${notifyTarget._id}/notify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(notifyForm),
+            });
+            if (res.ok) {
+                setNotifySuccess(`Notification sent to ${notifyTarget.name}`);
+                setNotifyForm({ title: '', message: '', type: 'info' });
+            }
+        } finally {
+            setNotifyLoading(false);
         }
     };
 
@@ -168,24 +205,39 @@ export default function FreelancersPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center justify-end gap-2">
+                                            {/* Logs */}
                                             <button
                                                 onClick={() => fetchLogs(f)}
                                                 disabled={!!actionLoading}
-                                                title="User Logs"
+                                                title="Activity Logs"
                                                 className="w-7 h-7 flex items-center justify-center rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition disabled:opacity-50"
                                             >
                                                 <FileClock className="w-3.5 h-3.5" />
                                             </button>
+
+                                            {/* Send Notification */}
+                                            <button
+                                                onClick={() => openNotifyModal(f)}
+                                                disabled={!!actionLoading}
+                                                title="Send Notification"
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition disabled:opacity-50"
+                                            >
+                                                <Bell className="w-3.5 h-3.5" />
+                                            </button>
+
+                                            {/* Activate (only when suspended/pending) */}
                                             {f.status !== 'active' && (
                                                 <button
                                                     onClick={() => changeStatus(f._id, 'active')}
                                                     disabled={!!actionLoading}
-                                                    title="Approve"
+                                                    title="Activate"
                                                     className="w-7 h-7 flex items-center justify-center rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition disabled:opacity-50"
                                                 >
                                                     {actionLoading === f._id + 'active' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                                                 </button>
                                             )}
+
+                                            {/* Suspend (only when active) */}
                                             {f.status !== 'suspended' && (
                                                 <button
                                                     onClick={() => changeStatus(f._id, 'suspended')}
@@ -193,9 +245,11 @@ export default function FreelancersPage() {
                                                     title="Suspend"
                                                     className="w-7 h-7 flex items-center justify-center rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition disabled:opacity-50"
                                                 >
-                                                    {actionLoading === f._id + 'suspended' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+                                                    {actionLoading === f._id + 'suspended' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldOff className="w-3.5 h-3.5" />}
                                                 </button>
                                             )}
+
+                                            {/* Delete */}
                                             <button
                                                 onClick={() => deleteUser(f._id)}
                                                 disabled={!!actionLoading}
@@ -213,7 +267,101 @@ export default function FreelancersPage() {
                 </div>
             </div>
 
-            {/* Logs Modal */}
+            {/* ─── Send Notification Modal ─── */}
+            {notifyTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                                    <Bell className="w-4 h-4 text-blue-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-white">Send Notification</h3>
+                                    <p className="text-xs text-slate-400">To: {notifyTarget.name} ({notifyTarget.userId || notifyTarget.email})</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setNotifyTarget(null)} className="p-2 hover:bg-white/5 rounded-lg transition text-slate-400 hover:text-white">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            {/* Type selector */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Type</label>
+                                <div className="flex gap-2 flex-wrap">
+                                    {notificationTypes.map(t => (
+                                        <button
+                                            key={t.value}
+                                            onClick={() => setNotifyForm(f => ({ ...f, type: t.value }))}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all
+                                                ${notifyForm.type === t.value
+                                                    ? `${t.color} border-current ring-2 ring-offset-1 ring-offset-slate-900 ring-current/50`
+                                                    : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {t.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Title */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1.5">Title</label>
+                                <input
+                                    type="text"
+                                    value={notifyForm.title}
+                                    onChange={e => setNotifyForm(f => ({ ...f, title: e.target.value }))}
+                                    placeholder="Notification title..."
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                />
+                            </div>
+
+                            {/* Message */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1.5">Message</label>
+                                <textarea
+                                    value={notifyForm.message}
+                                    onChange={e => setNotifyForm(f => ({ ...f, message: e.target.value }))}
+                                    placeholder="Write your message here..."
+                                    rows={4}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                                />
+                            </div>
+
+                            {notifySuccess && (
+                                <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 text-green-400 text-sm flex items-center gap-2">
+                                    <CheckCircle className="w-4 h-4 shrink-0" />
+                                    {notifySuccess}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex gap-3 px-6 pb-6">
+                            <button
+                                onClick={() => setNotifyTarget(null)}
+                                className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-sm font-medium transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={sendNotification}
+                                disabled={notifyLoading || !notifyForm.title || !notifyForm.message}
+                                className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {notifyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                {notifyLoading ? 'Sending...' : 'Send Notification'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── Logs Modal ─── */}
             {selectedUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                     <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">

@@ -175,15 +175,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
                                     </div>
                                 </div>
                             )}
-                            {client.phone && (
-                                <div className="flex items-start gap-3">
-                                    <Phone className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-sm font-medium text-slate-300">Phone</p>
-                                        <a href={`tel:${client.phone}`} className="text-slate-400 hover:text-white text-sm">{client.phone}</a>
-                                    </div>
-                                </div>
-                            )}
+
                             {client.whatsapp && (
                                 <div className="flex items-start gap-3">
                                     <Phone className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />

@@ -6,7 +6,7 @@ export interface IUser extends Document {
     name: string;
     email: string;
     userId?: string; // e.g., FH-1001
-    password: string;
+    password?: string;
     role: 'admin' | 'freelancer';
     status: 'pending' | 'active' | 'suspended';
     avatar?: string;
@@ -36,9 +36,9 @@ const UserSchema = new Schema<IUser>(
         name: { type: String, required: true, trim: true },
         email: { type: String, required: true, unique: true, lowercase: true, trim: true },
         userId: { type: String, unique: true, sparse: true },
-        password: { type: String, required: true, select: false, minlength: 8 },
+        password: { type: String, required: false, select: false, minlength: 8 },
         role: { type: String, enum: ['admin', 'freelancer'], default: 'freelancer' },
-        status: { type: String, enum: ['pending', 'active', 'suspended'], default: 'pending' },
+        status: { type: String, enum: ['pending', 'active', 'suspended'], default: 'active' },
         avatar: { type: String },
         businessName: { type: String, trim: true },
         businessAddress: { type: String, trim: true },
@@ -61,8 +61,8 @@ const UserSchema = new Schema<IUser>(
 );
 
 UserSchema.pre('save', async function () {
-    // Hash password
-    if (this.isModified('password')) {
+    // Hash password only if it exists and was modified
+    if (this.password && this.isModified('password')) {
         this.password = await bcrypt.hash(this.password, 12);
     }
 
@@ -81,6 +81,7 @@ UserSchema.pre('save', async function () {
 });
 
 UserSchema.methods.comparePassword = async function (candidatePassword: string) {
+    if (!this.password) return false;
     return bcrypt.compare(candidatePassword, this.password);
 };
 

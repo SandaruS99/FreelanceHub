@@ -22,17 +22,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'INVALID_CREDENTIALS' }, { status: 401 });
         }
 
-        const isValid = await bcrypt.compare(password, user.password);
+        const isValid = user.password ? await bcrypt.compare(password, user.password) : false;
         if (!isValid) {
             return NextResponse.json({ error: 'INVALID_CREDENTIALS' }, { status: 401 });
-        }
-
-        if (user.status === 'pending') {
-            return NextResponse.json({ error: 'PENDING_APPROVAL' }, { status: 403 });
-        }
-
-        if (user.status === 'suspended') {
-            return NextResponse.json({ error: 'ACCOUNT_SUSPENDED' }, { status: 403 });
         }
 
         // Credentials are valid and user is active — let the caller proceed with NextAuth signIn

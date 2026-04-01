@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Mail, Phone, Building2, MoreVertical, Loader2, ArrowRight } from 'lucide-react';
-import { getLabelColorClass } from '@/lib/clientLabels';
+import { Plus, Search, Mail, Phone, Building2, Loader2, ArrowRight, Users, Tag, X } from 'lucide-react';
+import { getLabelColorClass, CLIENT_LABELS } from '@/lib/clientLabels';
 
 interface Client {
     _id: string;
@@ -11,7 +11,7 @@ interface Client {
     name: string;
     company?: string;
     email?: string;
-    phone?: string;
+    whatsapp?: string;
     status: string;
     tags: string[];
 }
@@ -20,27 +20,37 @@ export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [selectedLabel, setSelectedLabel] = useState('');
 
     const fetchClients = useCallback(async () => {
         setLoading(true);
-        const res = await fetch(`/api/clients?search=${search}`);
+        const params = new URLSearchParams();
+        if (search) params.set('search', search);
+        if (selectedLabel) params.set('tag', selectedLabel);
+        const res = await fetch(`/api/clients?${params}`);
         const data = await res.json();
         setClients(data.clients ?? []);
         setLoading(false);
-    }, [search]);
+    }, [search, selectedLabel]);
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
             fetchClients();
         }, 300);
         return () => clearTimeout(delayDebounceFn);
-    }, [search, fetchClients]);
+    }, [search, selectedLabel, fetchClients]);
 
     const statusColors: Record<string, string> = {
         active: 'bg-green-500/20 text-green-400 border-green-500/30',
         inactive: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
         archived: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     };
+
+    const toggleLabel = (label: string) => {
+        setSelectedLabel(prev => prev === label ? '' : label);
+    };
+
+    const hasFilters = search || selectedLabel;
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -60,18 +70,62 @@ export default function ClientsPage() {
             </div>
 
             {/* Toolbar */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
-                <div className="relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Search clients by name, company, or email..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                    />
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 space-y-4">
+                {/* Search row */}
+                <div className="flex items-center gap-3">
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search clients by name, company, or email..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                        />
+                    </div>
+                    {hasFilters && (
+                        <button
+                            onClick={() => { setSearch(''); setSelectedLabel(''); }}
+                            className="flex items-center gap-1.5 px-3 py-2.5 text-xs text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition"
+                        >
+                            <X className="w-3.5 h-3.5" /> Clear
+                        </button>
+                    )}
+                </div>
+
+                {/* Label filter row */}
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="flex items-center gap-1.5 text-xs text-slate-500 font-medium shrink-0">
+                        <Tag className="w-3.5 h-3.5" /> Filter by label:
+                    </span>
+                    {CLIENT_LABELS.map(label => (
+                        <button
+                            key={label.id}
+                            onClick={() => toggleLabel(label.label)}
+                            className={`px-2.5 py-1 rounded border text-[11px] uppercase tracking-wider font-bold whitespace-nowrap transition-all duration-150
+                                ${selectedLabel === label.label
+                                    ? `${label.colorClass} ring-2 ring-offset-1 ring-offset-slate-900 scale-105`
+                                    : `${label.colorClass} opacity-50 hover:opacity-80`
+                                }`}
+                        >
+                            {label.label}
+                        </button>
+                    ))}
                 </div>
             </div>
+
+            {/* Active filter badge */}
+            {selectedLabel && (
+                <div className="flex items-center gap-2 mb-4">
+                    <span className="text-xs text-slate-400">Showing clients labelled:</span>
+                    <span className={`px-2.5 py-1 rounded border text-[11px] uppercase tracking-wider font-bold ${getLabelColorClass(selectedLabel)}`}>
+                        {selectedLabel}
+                    </span>
+                    <button onClick={() => setSelectedLabel('')} className="text-slate-500 hover:text-slate-300 transition">
+                        <X className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            )}
 
             {/* Grid */}
             {loading ? (
@@ -85,9 +139,9 @@ export default function ClientsPage() {
                     </div>
                     <h3 className="text-lg font-semibold text-white mb-2">No clients found</h3>
                     <p className="text-slate-400 max-w-sm mx-auto mb-6">
-                        {search ? 'No clients match your search criteria.' : 'Add your first client to start organizing your contacts and projects.'}
+                        {hasFilters ? 'No clients match your current filters.' : 'Add your first client to start organizing your contacts and projects.'}
                     </p>
-                    {!search && (
+                    {!hasFilters && (
                         <Link
                             href="/dashboard/clients/new"
                             className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-medium px-5 py-2.5 rounded-xl transition"
@@ -138,21 +192,26 @@ export default function ClientsPage() {
                                                     <span className="truncate max-w-[150px]">{client.email}</span>
                                                 </div>
                                             )}
-                                            {client.phone && (
+                                            {client.whatsapp && (
                                                 <div className="flex items-center gap-2 text-xs text-slate-300">
-                                                    <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                                                    <span className="truncate">{client.phone}</span>
+                                                    <Phone className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                                                    <span className="truncate">{client.whatsapp}</span>
                                                 </div>
                                             )}
-                                            {!client.email && !client.phone && <span className="text-slate-600 italic">No contact info</span>}
+                                            {!client.email && !client.whatsapp && <span className="text-slate-600 italic">No contact info</span>}
                                         </td>
                                         <td className="px-6 py-4">
                                             {client.tags && client.tags.length > 0 ? (
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {client.tags.map(tag => (
-                                                        <span key={tag} className={`px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider font-bold whitespace-nowrap ${getLabelColorClass(tag)}`}>
+                                                        <button
+                                                            key={tag}
+                                                            onClick={() => toggleLabel(tag)}
+                                                            title={`Filter by "${tag}"`}
+                                                            className={`px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider font-bold whitespace-nowrap transition-all hover:scale-105 ${getLabelColorClass(tag)} ${selectedLabel === tag ? 'ring-2 ring-offset-1 ring-offset-slate-900' : ''}`}
+                                                        >
                                                             {tag}
-                                                        </span>
+                                                        </button>
                                                     ))}
                                                 </div>
                                             ) : (
@@ -181,6 +240,3 @@ export default function ClientsPage() {
         </div>
     );
 }
-
-// Ensure lucide icon Users is imported for empty state
-import { Users } from 'lucide-react';

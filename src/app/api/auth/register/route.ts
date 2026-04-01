@@ -31,13 +31,14 @@ export async function POST(req: NextRequest) {
             businessName,
             whatsapp,
             role: 'freelancer',
-            status: 'pending',
+            status: 'active',   // Auto-approved — no admin review required
+            emailVerified: true,
             verificationToken,
         });
 
         return NextResponse.json(
             {
-                message: 'Registration successful! Your account is pending admin approval.',
+                message: 'Registration successful! You can now sign in.',
                 userId: user._id,
             },
             { status: 201 }
