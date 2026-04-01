@@ -27,6 +27,7 @@ export default function ProjectsPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [categoryFilter, setCategoryFilter] = useState('all');
 
     const fetchProjects = useCallback(async () => {
         setLoading(true);
@@ -45,11 +46,15 @@ export default function ProjectsPage() {
         fetchProjects();
     }, [fetchProjects]);
 
-    const filteredProjects = projects.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        (p.projectNumber || '').toLowerCase().includes(search.toLowerCase()) ||
-        p.clientId?.name.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredProjects = projects.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
+            (p.projectNumber || '').toLowerCase().includes(search.toLowerCase()) ||
+            p.clientId?.name.toLowerCase().includes(search.toLowerCase());
+        
+        const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
+        
+        return matchesSearch && matchesCategory;
+    });
 
     const statusColors: Record<string, string> = {
         planning: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
@@ -98,13 +103,25 @@ export default function ProjectsPage() {
                 <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[150px]"
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition outline-none min-w-[140px]"
                 >
-                    <option value="all" className="bg-slate-800">All Statuses</option>
+                    <option value="all" className="bg-slate-800">All Status</option>
                     <option value="planning" className="bg-slate-800">Planning</option>
                     <option value="active" className="bg-slate-800">Active</option>
-                    <option value="paused" className="bg-slate-800">Paused</option>
+                    <option value="on-hold" className="bg-slate-800">On-Hold</option>
                     <option value="completed" className="bg-slate-800">Completed</option>
+                    <option value="cancelled" className="bg-slate-800">Cancelled</option>
+                </select>
+
+                <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition outline-none min-w-[160px]"
+                >
+                    <option value="all" className="bg-slate-800">All Categories</option>
+                    {PROJECT_CATEGORIES.map(cat => (
+                        <option key={cat.id} value={cat.id} className="bg-slate-800">{cat.label}</option>
+                    ))}
                 </select>
             </div>
 
