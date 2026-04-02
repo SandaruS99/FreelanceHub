@@ -66,11 +66,11 @@ export async function POST(req: NextRequest) {
             currency = 'USD';
             items = `Subscription Upgrade: ${plan.name}`;
             customer = {
-                name: session.user.name || '',
-                email: session.user.email || '',
-                phone: (session.user as any).phone || '',
-                address: 'N/A',
-                city: 'N/A',
+                name: session.user.name || 'Sandbox Customer',
+                email: session.user.email || 'sandbox@example.com',
+                phone: (session.user as any).phone || (session.user as any).whatsapp || '0000000000',
+                address: 'No Address',
+                city: 'No City',
                 country: 'Sri Lanka'
             };
         }
@@ -92,13 +92,13 @@ export async function POST(req: NextRequest) {
             items: items,
             currency: finalCurrency,
             amount: finalAmount.toFixed(2),
-            first_name: customer.name.split(' ')[0],
-            last_name: customer.name.split(' ').slice(1).join(' ') || 'Customer',
-            email: customer.email,
-            phone: customer.phone,
-            address: customer.address,
-            city: customer.city,
-            country: customer.country,
+            first_name: customer.name.split(' ')[0] || 'Customer',
+            last_name: customer.name.split(' ').slice(1).join(' ') || 'Name',
+            email: customer.email || 'customer@example.com',
+            phone: customer.phone || '0000000000',
+            address: customer.address || 'No Address',
+            city: customer.city || 'No City',
+            country: customer.country || 'Sri Lanka',
             hash,
             payhere_url: PAYHERE_URL,
         };
