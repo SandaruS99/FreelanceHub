@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import './globals.css';
+// Deployment trigger for reverted version
 import { Providers } from '@/components/Providers';
 
 const poppins = Poppins({
