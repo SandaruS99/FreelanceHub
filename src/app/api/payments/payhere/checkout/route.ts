@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { type, id } = body; // type: 'invoice' | 'plan', id: token or planId
+        const { type, id, returnUrl } = body; // type: 'invoice' | 'plan', returnUrl is optional override
 
         await dbConnect();
 
@@ -80,10 +80,13 @@ export async function POST(req: NextRequest) {
 
         const hash = generatePayHereHash(orderId, finalAmount, finalCurrency);
 
+        const defaultReturnPath = type === 'invoice' ? `/preview/invoice/${id}/pay` : '/dashboard/settings/billing';
+        const finalReturnUrl = returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}${defaultReturnPath}`;
+
         const params = {
             merchant_id: process.env.PAYHERE_MERCHANT_ID,
-            return_url: `${process.env.NEXT_PUBLIC_APP_URL}${type === 'invoice' ? `/preview/invoice/${id}/pay` : '/dashboard/settings/billing'}?status=success`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}${type === 'invoice' ? `/preview/invoice/${id}/pay` : '/dashboard/settings/billing'}?status=cancelled`,
+            return_url: `${finalReturnUrl}?status=success`,
+            cancel_url: `${finalReturnUrl}?status=cancelled`,
             notify_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/payhere/notify`,
             order_id: orderId,
             items: items,

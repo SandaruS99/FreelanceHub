@@ -45,7 +45,13 @@ export default function RegisterPage() {
                 setError(data.error ?? 'Registration failed. Please try again.');
             } else {
                 setSuccess(true);
-                setTimeout(() => router.push('/auth/login'), 3000);
+                // Auto-login to bypass normal login screen for new users
+                await signIn('credentials', {
+                    email: form.email,
+                    password: form.password,
+                    redirect: false,
+                });
+                router.push('/onboarding');
             }
         } catch {
             setError('Network error. Please try again.');
@@ -56,7 +62,7 @@ export default function RegisterPage() {
 
     async function handleGoogleSignUp() {
         setGoogleLoading(true);
-        await signIn('google', { callbackUrl: '/dashboard' });
+        await signIn('google', { callbackUrl: '/onboarding' });
     }
 
     if (success) {
@@ -68,7 +74,7 @@ export default function RegisterPage() {
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-3">Account Created!</h2>
                     <p className="text-slate-400">
-                        Your account is ready. Redirecting to login...
+                        Logging you in and setting up your workspace...
                     </p>
                 </div>
             </div>

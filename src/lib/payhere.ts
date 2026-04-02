@@ -47,21 +47,8 @@ export function convertToLKR(amount: number, fromCurrencyCode: string) {
 export function generatePayHereHash(orderId: string, amount: number, currency: string) {
     const formattedAmount = amount.toFixed(2);
 
-    // Clean and prepare the secret. 
-    // If it looks like Base64 (starts with Mj for sandbox or similar), we decode it.
-    let cleanSecret = MERCHANT_SECRET.trim();
-    try {
-        if (cleanSecret.endsWith('=') || /^[A-Za-z0-9+/]+={0,2}$/.test(cleanSecret)) {
-            // Check if it's actually Base64 by trying to decode it
-            const decoded = Buffer.from(cleanSecret, 'base64').toString('utf8');
-            // If the decoded version is a valid numeric/alphanumeric string, use it
-            if (/^[a-zA-Z0-9]+$/.test(decoded)) {
-                cleanSecret = decoded;
-            }
-        }
-    } catch (e) {
-        // Fallback to original secret if decoding fails
-    }
+    // Use the raw secret from the portal exactly as generated
+    const cleanSecret = MERCHANT_SECRET.trim();
 
     const secretHash = crypto.createHash('md5').update(cleanSecret).digest('hex').toUpperCase();
 
