@@ -55,7 +55,7 @@ export default function DeliverProjectModal({
         e.preventDefault();
         if (!file) return setError('Please upload a file');
         if (!whatsapp) return setError('Please provide a WhatsApp number for the client');
-        
+
         // Vercel Serverless Function 4.5MB limit check
         if (file.size > 4.5 * 1024 * 1024) {
             return setError('File exceeds the 4.5MB limit. Please upload a smaller file or compress it.');
@@ -100,7 +100,7 @@ export default function DeliverProjectModal({
             const finalMessage = `*Hi ${clientName}!* 🚀\n\nI've finished the project *"${projectName}"* and it's ready for your review!\n\n🔗 *View Secure Preview:* ${finalPreviewUrl}\n\nLooking forward to your feedback!`;
 
             const waUrl = getWhatsAppLink(whatsapp, finalMessage);
-            
+
             setSuccessData({
                 project: data.project,
                 waUrl
@@ -220,10 +220,10 @@ export default function DeliverProjectModal({
                                             <p className="font-bold text-white truncate max-w-[250px]">{file.name}</p>
                                             <p className="text-xs text-slate-400 mt-1">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                                         </div>
-                                        <button 
-                                           type="button" 
-                                           onClick={(e) => { e.preventDefault(); setFile(null); }}
-                                           className="mt-2 text-xs text-red-400 hover:text-red-300 transition underline relative z-10"
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.preventDefault(); setFile(null); }}
+                                            className="mt-2 text-xs text-red-400 hover:text-red-300 transition underline relative z-10"
                                         >
                                             Remove file
                                         </button>

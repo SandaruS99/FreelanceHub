@@ -4,7 +4,15 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, FileText, MessageCircle } from 'lucide-react';
-import { useCurrency } from '@/lib/useCurrency';
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+    USD: '$', EUR: '€', GBP: '£', LKR: '₨', INR: '₹',
+    AUD: 'A$', CAD: 'C$', SGD: 'S$', JPY: '¥', CNY: '¥',
+    AED: 'AED', PKR: '₨', BDT: 'BDT', MYR: 'RM', THB: '฿',
+};
+function getCurrencySymbol(code: string): string {
+    return CURRENCY_SYMBOLS[code] ?? code;
+}
 
 interface LineItem {
     description: string;
@@ -15,6 +23,7 @@ interface LineItem {
 interface Invoice {
     _id: string;
     invoiceNumber: string;
+    currency: string;
     clientId?: {
         _id: string;
         name: string;
@@ -44,7 +53,12 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const { formatFull } = useCurrency();
+
+    // Format an amount using the invoice's own stored currency (no exchange rate conversion)
+    const fmtAmt = (amount: number) => {
+        const sym = invoice ? getCurrencySymbol(invoice.currency || 'USD') : '$';
+        return `${sym}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
 
     useEffect(() => {
         fetch(`/api/invoices/${id}`)
@@ -242,7 +256,7 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
 
                                 <p className="text-slate-500 text-sm">Amount Due:</p>
                                 <p className="text-slate-900 font-bold text-sm text-right">
-                                    {formatFull(invoice.total || 0)}
+                                    {fmtAmt(invoice.total || 0)}
                                 </p>
                             </div>
                         </div>
@@ -280,10 +294,10 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                                 {invoice.lineItems.map((item, idx) => (
                                     <tr key={idx}>
                                         <td className="py-4 text-slate-800">{item.description}</td>
-                                        <td className="py-4 text-slate-600 text-right">{formatFull(item.unitPrice)}</td>
+                                        <td className="py-4 text-slate-600 text-right">{fmtAmt(item.unitPrice)}</td>
                                         <td className="py-4 text-slate-600 text-right">{item.quantity}</td>
                                         <td className="py-4 text-slate-800 font-medium text-right">
-                                            {formatFull(item.quantity * item.unitPrice)}
+                                            {fmtAmt(item.quantity * item.unitPrice)}
                                         </td>
                                     </tr>
                                 ))}
@@ -305,24 +319,24 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                         <div className="w-full sm:w-1/3 space-y-3">
                             <div className="flex justify-between text-sm">
                                 <span className="text-slate-500">Subtotal</span>
-                                <span className="text-slate-800 font-medium">{formatFull(invoice.subtotal)}</span>
+                                <span className="text-slate-800 font-medium">{fmtAmt(invoice.subtotal)}</span>
                             </div>
                             {invoice.taxTotal > 0 && (
                                 <div className="flex justify-between text-sm">
                                     <span className="text-slate-500">Tax</span>
-                                    <span className="text-slate-800 font-medium">{formatFull(invoice.taxTotal)}</span>
+                                    <span className="text-slate-800 font-medium">{fmtAmt(invoice.taxTotal)}</span>
                                 </div>
                             )}
                             {invoice.discount > 0 && (
                                 <div className="flex justify-between text-sm">
                                     <span className="text-slate-500">Discount</span>
-                                    <span className="text-slate-800 font-medium">-{formatFull(invoice.discount)}</span>
+                                    <span className="text-slate-800 font-medium">-{fmtAmt(invoice.discount)}</span>
                                 </div>
                             )}
                             <div className="flex justify-between items-center pt-3 border-t-2 border-slate-200">
                                 <span className="font-bold text-slate-800">Total Due</span>
                                 <span className="text-xl font-black text-slate-900">
-                                    {formatFull(invoice.total || 0)}
+                                    {fmtAmt(invoice.total || 0)}
                                 </span>
                             </div>
                         </div>

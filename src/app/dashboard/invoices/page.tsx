@@ -3,11 +3,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus, Search, FileText, Download, Loader2, ArrowRight } from 'lucide-react';
-import { useCurrency } from '@/lib/useCurrency';
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+    USD: '$', EUR: '€', GBP: '£', LKR: '₨', INR: '₹',
+    AUD: 'A$', CAD: 'C$', SGD: 'S$', JPY: '¥', AED: 'AED',
+    PKR: '₨', MYR: 'RM', THB: '฿',
+};
+function fmtAmt(amount: number, currency?: string): string {
+    const c = currency || 'USD';
+    const sym = CURRENCY_SYMBOLS[c] ?? c;
+    return `${sym}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 interface Invoice {
     _id: string;
     invoiceNumber: string;
+    currency?: string;
     clientId?: { _id: string; name: string; company?: string };
     issueDate: string;
     dueDate: string;
@@ -20,7 +31,6 @@ export default function InvoicesPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
-    const { formatFull } = useCurrency();
 
     const fetchInvoices = useCallback(async () => {
         setLoading(true);
@@ -141,7 +151,7 @@ export default function InvoicesPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 font-medium text-white">
-                                            {formatFull(invoice.total || 0)}
+                                            {fmtAmt(invoice.total || 0, invoice.currency)}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-white">{new Date(invoice.issueDate).toLocaleDateString()}</div>

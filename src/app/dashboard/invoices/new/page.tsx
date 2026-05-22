@@ -1,9 +1,20 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Loader2, Plus, Trash2, Calendar, FileText, Send, X, MessageCircle } from 'lucide-react';
+
+// Map ISO currency codes to their display symbols
+const CURRENCY_SYMBOLS: Record<string, string> = {
+    USD: '$', EUR: '€', GBP: '£', LKR: 'Rs', INR: '₹',
+    AUD: 'A$', CAD: 'C$', SGD: 'S$', JPY: '¥', CNY: '¥',
+    AED: 'AED', PKR: 'Rs', BDT: '৳', MYR: 'RM', THB: '฿',
+};
+function getCurrencySymbol(code: string): string {
+    return CURRENCY_SYMBOLS[code] ?? code;
+}
 
 interface Client {
     _id: string;
@@ -24,6 +35,7 @@ function InvoiceForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const preSelectedClient = searchParams.get('client');
+    const { data: session } = useSession();
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -46,7 +58,15 @@ function InvoiceForm() {
         taxRate: 0,
         discount: 0,
         notes: 'Thank you for your business!',
+        currency: 'USD',
     });
+
+    // Auto-set currency from user account settings
+    useEffect(() => {
+        if (session?.user?.currency) {
+            setForm(f => ({ ...f, currency: session.user.currency! }));
+        }
+    }, [session]);
 
     const [items, setItems] = useState<LineItem[]>([
         { id: crypto.randomUUID(), description: '', quantity: 1, rate: 0 }
@@ -58,6 +78,8 @@ function InvoiceForm() {
             .then((data) => setClients(data.clients || []))
             .catch((err) => console.error(err));
     }, []);
+
+    const currencySymbol = getCurrencySymbol(form.currency);
 
     const updateForm = (key: string, value: string | number) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -319,7 +341,7 @@ function InvoiceForm() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="sm:hidden block text-xs font-medium text-slate-400 mb-1">Rate ($)</label>
+                                            <label className="sm:hidden block text-xs font-medium text-slate-400 mb-1">Rate ({currencySymbol})</label>
                                             <input
                                                 type="number"
                                                 min="0"
@@ -369,7 +391,7 @@ function InvoiceForm() {
                             <div className="bg-slate-900 rounded-xl p-5 border border-white/5">
                                 <div className="flex justify-between items-center mb-3 text-sm">
                                     <span className="text-slate-400">Subtotal</span>
-                                    <span className="text-white">${subtotal.toFixed(2)}</span>
+                                    <span className="text-white">{currencySymbol}{subtotal.toFixed(2)}</span>
                                 </div>
 
                                 <div className="flex justify-between items-center mb-3 text-sm group">
@@ -387,7 +409,7 @@ function InvoiceForm() {
                                 </div>
 
                                 <div className="flex justify-between items-center mb-4 text-sm">
-                                    <span className="text-slate-400">Discount ($)</span>
+                                    <span className="text-slate-400">Discount ({currencySymbol})</span>
                                     <input
                                         type="number"
                                         min="0"
@@ -400,7 +422,7 @@ function InvoiceForm() {
                                 <div className="flex justify-between items-center pt-3 border-t border-white/10">
                                     <span className="text-base font-semibold text-white">Total Amount</span>
                                     <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
-                                        ${Math.max(0, total).toFixed(2)}
+                                        {currencySymbol}{Math.max(0, total).toFixed(2)}
                                     </span>
                                 </div>
                             </div>
@@ -412,6 +434,16 @@ function InvoiceForm() {
                 <div className="space-y-6">
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sticky top-24">
                         <h2 className="text-lg font-semibold text-white mb-6 border-b border-white/5 pb-4">Settings</h2>
+
+                        {/* Currency badge */}
+                        <div className="mb-5">
+                            <label className="block text-sm font-medium text-slate-300 mb-1.5">Currency</label>
+                            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5">
+                                <span className="text-lg font-bold text-purple-400">{currencySymbol}</span>
+                                <span className="text-white text-sm font-medium">{form.currency}</span>
+                                <span className="text-slate-500 text-xs ml-auto">From account settings</span>
+                            </div>
+                        </div>
 
                         <div className="space-y-5">
                             <div>

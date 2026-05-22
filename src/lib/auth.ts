@@ -28,7 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 if (!credentials?.email || !credentials?.password) return null;
 
                 await dbConnect();
-                const user = await User.findOne({ email: credentials.email }).select('+password');
+                const user = await User.findOne({ email: (credentials.email as string).toLowerCase() }).select('+password');
 
                 if (!user) return null;
                 if (!user.password) return null; // OAuth-only account
