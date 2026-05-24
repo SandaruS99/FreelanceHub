@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Calendar, Loader2, DollarSign, AlignLeft, Plus, Trash2, ListChecks, Tags } from 'lucide-react';
 import { PROJECT_CATEGORIES, CATEGORY_GROUPS } from '@/lib/projectCategories';
+import { useCurrency } from '@/lib/useCurrency';
 
 interface Client {
     _id: string;
@@ -17,6 +18,7 @@ interface TaskForm {
 }
 
 function ProjectForm() {
+    const { symbol } = useCurrency();
     const router = useRouter();
     const searchParams = useSearchParams();
     const preSelectedClient = searchParams.get('client');
@@ -201,14 +203,14 @@ function ProjectForm() {
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Total Budget</label>
                                 <div className="relative">
-                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium text-sm">{symbol}</span>
                                     <input
                                         type="number"
                                         min="0"
                                         step="0.01"
                                         value={form.budget}
                                         onChange={(e) => update('budget', e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
                                         placeholder="0.00"
                                     />
                                 </div>
