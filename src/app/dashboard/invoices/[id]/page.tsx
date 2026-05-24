@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, FileText, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, MessageCircle } from 'lucide-react';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
     USD: '$', EUR: '€', GBP: '£', LKR: '₨', INR: '₹',
@@ -31,6 +31,14 @@ interface Invoice {
         email?: string;
         address?: string;
         whatsapp?: string;
+    };
+    freelancerId?: {
+        name: string;
+        businessName?: string;
+        businessAddress?: string;
+        phone?: string;
+        email?: string;
+        website?: string;
     };
     issueDate: string;
     dueDate: string;
@@ -223,80 +231,102 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                 </div>
             </div>
 
-            {/* Invoice Document Preview */}
-            <div className="bg-white text-slate-900 rounded-2xl shadow-xl overflow-hidden print:shadow-none">
-                <div className="p-8 sm:p-12">
+            {/* Invoice Document Preview — matches PDF style */}
+            <div className="bg-white text-[#333] rounded-2xl shadow-xl overflow-hidden print:shadow-none" style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '11pt' }}>
+                <div className="p-10 sm:p-12">
 
-                    {/* Document Header */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start gap-8 mb-12">
+                    {/* Header: INVOICE + number left | Freelancer info right */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start pb-6 mb-8" style={{ borderBottom: '2px solid #e5e7eb' }}>
                         <div>
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center">
-                                    <FileText className="w-5 h-5 text-white" />
-                                </div>
-                                <span className="text-xl font-black tracking-tight text-slate-900">FreelanceHub</span>
-                            </div>
-                            <h2 className="text-3xl font-light text-slate-400 uppercase tracking-widest mb-2">Invoice</h2>
-                            <p className="font-semibold text-slate-800 text-lg">{invoice.invoiceNumber}</p>
+                            <h2 className="font-bold text-[#111827]" style={{ fontSize: '28pt', lineHeight: 1.1 }}>INVOICE</h2>
+                            <p className="text-[#6b7280] mt-1" style={{ fontSize: '12pt' }}>#{invoice.invoiceNumber}</p>
                         </div>
-
-                        <div className="text-left sm:text-right space-y-1">
-                            <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">Invoice Summary</p>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                                <p className="text-slate-500 text-sm">Issue Date:</p>
-                                <p className="text-slate-900 font-medium text-sm text-right">{new Date(invoice.issueDate).toLocaleDateString()}</p>
-
-                                <p className="text-slate-500 text-sm">Due Date:</p>
-                                <p className="text-slate-900 font-medium text-sm text-right flex items-center gap-1 justify-end">
-                                    {new Date(invoice.dueDate).toLocaleDateString()}
-                                    {new Date(invoice.dueDate) < new Date() && invoice.status !== 'paid' && (
-                                        <Clock className="w-3.5 h-3.5 text-red-500" />
+                        <div className="text-left sm:text-right mt-4 sm:mt-0 space-y-0.5">
+                            {invoice.freelancerId ? (
+                                <>
+                                    <p className="font-bold text-[#111827]" style={{ fontSize: '18pt' }}>
+                                        {invoice.freelancerId.businessName || invoice.freelancerId.name}
+                                    </p>
+                                    {invoice.freelancerId.businessName && (
+                                        <p className="text-[#4b5563]">{invoice.freelancerId.name}</p>
                                     )}
-                                </p>
-
-                                <p className="text-slate-500 text-sm">Amount Due:</p>
-                                <p className="text-slate-900 font-bold text-sm text-right">
-                                    {fmtAmt(invoice.total || 0)}
-                                </p>
-                            </div>
+                                    {invoice.freelancerId.businessAddress && (
+                                        <p className="text-[#4b5563]">{invoice.freelancerId.businessAddress}</p>
+                                    )}
+                                    {invoice.freelancerId.phone && (
+                                        <p className="text-[#4b5563]">{invoice.freelancerId.phone}</p>
+                                    )}
+                                    {invoice.freelancerId.email && (
+                                        <p className="text-[#4b5563]">{invoice.freelancerId.email}</p>
+                                    )}
+                                    {invoice.freelancerId.website && (
+                                        <p className="text-[#4b5563]">{invoice.freelancerId.website}</p>
+                                    )}
+                                </>
+                            ) : null}
                         </div>
                     </div>
 
-                    {/* Addresses */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-12">
-                        <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Billed To</p>
+                    {/* Info Grid: Bill To (left) | Dates + Amount Due (right) */}
+                    <div className="flex flex-col sm:flex-row justify-between mb-8">
+                        {/* Bill To */}
+                        <div className="sm:w-1/2">
+                            <p className="text-[10pt] text-[#6b7280] uppercase font-bold tracking-wider mb-1">Billed To:</p>
                             {invoice.clientId ? (
                                 <>
-                                    <p className="font-semibold text-slate-800 text-lg">{invoice.clientId.name}</p>
-                                    {invoice.clientId.company && <p className="text-slate-600">{invoice.clientId.company}</p>}
-                                    {invoice.clientId.email && <p className="text-slate-600">{invoice.clientId.email}</p>}
-                                    {invoice.clientId.address && <p className="text-slate-600 whitespace-pre-wrap mt-1">{invoice.clientId.address}</p>}
+                                    <p className="font-bold text-[#111827]" style={{ fontSize: '16pt' }}>{invoice.clientId.name}</p>
+                                    {invoice.clientId.company && <p className="text-[#4b5563]">{invoice.clientId.company}</p>}
+                                    {invoice.clientId.email && <p className="text-[#4b5563]">{invoice.clientId.email}</p>}
+                                    {invoice.clientId.address && <p className="text-[#4b5563] whitespace-pre-wrap mt-1">{invoice.clientId.address}</p>}
                                 </>
                             ) : (
-                                <p className="text-slate-500 italic">Unknown Client</p>
+                                <p className="text-[#4b5563] italic">Unknown Client</p>
                             )}
+                        </div>
+
+                        {/* Dates + Amount Due */}
+                        <div className="sm:w-1/2 flex flex-col sm:items-end mt-6 sm:mt-0 gap-1">
+                            <div className="flex gap-8 justify-end">
+                                <span className="text-[#6b7280] font-bold w-24 text-right">Issue Date:</span>
+                                <span className="text-[#333] w-24 text-right">{new Date(invoice.issueDate).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex gap-8 justify-end items-center">
+                                <span className="text-[#6b7280] font-bold w-24 text-right">Due Date:</span>
+                                <span className="text-[#333] w-24 text-right flex items-center gap-1 justify-end">
+                                    {new Date(invoice.dueDate).toLocaleDateString()}
+                                    {new Date(invoice.dueDate) < new Date() && invoice.status !== 'paid' && (
+                                        <Clock className="w-3 h-3 text-red-500" />
+                                    )}
+                                </span>
+                            </div>
+                            {/* Amount Due box */}
+                            <div className="mt-4 text-right">
+                                <p className="text-[12pt] text-[#6b7280] font-bold">Amount Due:</p>
+                                <p className="font-bold text-[#111827]" style={{ fontSize: '20pt' }}>
+                                    {fmtAmt(invoice.total || 0)} {invoice.currency}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
                     {/* Line Items Table */}
-                    <div className="mb-12">
-                        <table className="w-full text-left text-sm">
+                    <div className="mb-8">
+                        <table className="w-full text-left" style={{ fontSize: '11pt' }}>
                             <thead>
-                                <tr className="border-y-2 border-slate-200">
-                                    <th className="py-3 font-semibold text-slate-600">Description</th>
-                                    <th className="py-3 font-semibold text-slate-600 text-right w-24">Rate</th>
-                                    <th className="py-3 font-semibold text-slate-600 text-right w-20">Qty</th>
-                                    <th className="py-3 font-semibold text-slate-600 text-right w-32">Amount</th>
+                                <tr style={{ borderBottom: '2px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
+                                    <th className="py-2 pl-2 text-[#4b5563] font-bold text-[10pt] w-[45%]">Description</th>
+                                    <th className="py-2 text-[#4b5563] font-bold text-[10pt] text-right w-[20%]">Rate</th>
+                                    <th className="py-2 text-[#4b5563] font-bold text-[10pt] text-right w-[15%]">Qty</th>
+                                    <th className="py-2 pr-2 text-[#4b5563] font-bold text-[10pt] text-right w-[20%]">Amount</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 border-b border-slate-200">
+                            <tbody>
                                 {invoice.lineItems.map((item, idx) => (
-                                    <tr key={idx}>
-                                        <td className="py-4 text-slate-800">{item.description}</td>
-                                        <td className="py-4 text-slate-600 text-right">{fmtAmt(item.unitPrice)}</td>
-                                        <td className="py-4 text-slate-600 text-right">{item.quantity}</td>
-                                        <td className="py-4 text-slate-800 font-medium text-right">
+                                    <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                        <td className="py-3 pl-2 text-[#333]">{item.description}</td>
+                                        <td className="py-3 text-[#4b5563] text-right">{fmtAmt(item.unitPrice)}</td>
+                                        <td className="py-3 text-[#4b5563] text-right">{item.quantity}</td>
+                                        <td className="py-3 pr-2 text-[#333] font-bold text-right">
                                             {fmtAmt(item.quantity * item.unitPrice)}
                                         </td>
                                     </tr>
@@ -305,46 +335,53 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
                         </table>
                     </div>
 
-                    {/* Totals */}
-                    <div className="flex flex-col sm:flex-row justify-between items-end gap-8 mb-12">
-                        <div className="w-full sm:w-1/2">
+                    {/* Totals Section: Notes left | Totals box right */}
+                    <div className="flex flex-col sm:flex-row justify-between gap-8 mb-10">
+                        {/* Notes */}
+                        <div className="sm:w-1/2 pr-4">
                             {invoice.notes && (
                                 <>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Notes & Terms</p>
-                                    <p className="text-slate-600 text-sm whitespace-pre-wrap">{invoice.notes}</p>
+                                    <p className="text-[10pt] text-[#6b7280] uppercase font-bold tracking-wider mb-1">Notes</p>
+                                    <p className="text-[#4b5563] text-[11pt] whitespace-pre-wrap">{invoice.notes}</p>
                                 </>
                             )}
                         </div>
 
-                        <div className="w-full sm:w-1/3 space-y-3">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-slate-500">Subtotal</span>
-                                <span className="text-slate-800 font-medium">{fmtAmt(invoice.subtotal)}</span>
+                        {/* Totals */}
+                        <div className="sm:w-[40%] space-y-2">
+                            <div className="flex justify-between text-[11pt]">
+                                <span className="text-[#6b7280]">Subtotal:</span>
+                                <span className="font-bold text-[#333]">{fmtAmt(invoice.subtotal)}</span>
                             </div>
                             {invoice.taxTotal > 0 && (
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-500">Tax</span>
-                                    <span className="text-slate-800 font-medium">{fmtAmt(invoice.taxTotal)}</span>
+                                <div className="flex justify-between text-[11pt]">
+                                    <span className="text-[#6b7280]">Tax:</span>
+                                    <span className="font-bold text-[#333]">{fmtAmt(invoice.taxTotal)}</span>
                                 </div>
                             )}
                             {invoice.discount > 0 && (
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-500">Discount</span>
-                                    <span className="text-slate-800 font-medium">-{fmtAmt(invoice.discount)}</span>
+                                <div className="flex justify-between text-[11pt]">
+                                    <span className="text-[#6b7280]">Discount:</span>
+                                    <span className="font-bold text-[#333]">-{fmtAmt(invoice.discount)}</span>
                                 </div>
                             )}
-                            <div className="flex justify-between items-center pt-3 border-t-2 border-slate-200">
-                                <span className="font-bold text-slate-800">Total Due</span>
-                                <span className="text-xl font-black text-slate-900">
+                            <div className="flex justify-between items-center pt-3 mt-1" style={{ borderTop: '2px solid #e5e7eb' }}>
+                                <span className="font-bold text-[14pt] text-[#111827]">Total Due:</span>
+                                <span className="font-bold text-[16pt] text-[#8b5cf6]">
                                     {fmtAmt(invoice.total || 0)}
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Footer Ribbon */}
+                    {/* Footer */}
+                    <div className="text-center text-[#9ca3af] text-[10pt] pt-3" style={{ borderTop: '1px solid #e5e7eb' }}>
+                        Thank you for your business. Generated by promoU Software.
+                    </div>
+
+                    {/* Paid ribbon */}
                     {invoice.status === 'paid' && (
-                        <div className="mt-8 flex items-center justify-center gap-2 p-4 bg-green-50 text-green-700 rounded-xl border border-green-200">
+                        <div className="mt-6 flex items-center justify-center gap-2 p-4 bg-green-50 text-green-700 rounded-xl border border-green-200">
                             <CheckCircle className="w-5 h-5" />
                             <p className="font-semibold text-sm">This invoice has been marked as PAID in full.</p>
                         </div>

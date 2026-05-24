@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
         await dbConnect();
 
         const invoice = await Invoice.findOne({ publicToken: token })
-            .populate({ path: 'freelancerId', select: 'name email', model: User })
+            .populate({ path: 'freelancerId', select: 'name email businessName businessAddress phone website', model: User })
             .populate({ path: 'clientId', select: 'name company email', model: Client });
 
         if (!invoice) {
