@@ -5,14 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Trash2, Send, Download, CheckCircle, Clock, MessageCircle } from 'lucide-react';
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-    USD: '$', EUR: '€', GBP: '£', LKR: '₨', INR: '₹',
-    AUD: 'A$', CAD: 'C$', SGD: 'S$', JPY: '¥', CNY: '¥',
-    AED: 'AED', PKR: '₨', BDT: 'BDT', MYR: 'RM', THB: '฿',
-};
-function getCurrencySymbol(code: string): string {
-    return CURRENCY_SYMBOLS[code] ?? code;
-}
+import { formatAmount } from '@/lib/useCurrency';
 
 interface LineItem {
     description: string;
@@ -64,8 +57,7 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
 
     // Format an amount using the invoice's own stored currency (no exchange rate conversion)
     const fmtAmt = (amount: number) => {
-        const sym = invoice ? getCurrencySymbol(invoice.currency || 'USD') : '$';
-        return `${sym}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        return formatAmount(amount, invoice?.currency || 'USD');
     };
 
     useEffect(() => {

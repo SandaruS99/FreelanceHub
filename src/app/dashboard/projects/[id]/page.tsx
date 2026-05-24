@@ -8,7 +8,7 @@ import {
     AlignLeft, DollarSign, Building2, User, Send, ExternalLink,
     MessageSquare, Video, Copy, Check, AlertCircle
 } from 'lucide-react';
-import { useCurrency } from '@/lib/useCurrency';
+import { useCurrency, formatAmount } from '@/lib/useCurrency';
 import DeliverProjectModal from '@/components/DeliverProjectModal';
 import ScheduleMeetModal from '@/components/ScheduleMeetModal';
 import EditProjectModal from '@/components/EditProjectModal';
@@ -43,6 +43,7 @@ interface Project {
         status: string;
         createdAt: string;
     }[];
+    currency?: string;
 }
 
 export default function ProjectDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -57,7 +58,6 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [meetLinkCopied, setMeetLinkCopied] = useState(false);
-    const { format } = useCurrency();
 
     useEffect(() => {
         fetch(`/api/projects/${id}`)
@@ -300,7 +300,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                         <p className="text-sm font-medium text-slate-400 mb-1 flex items-center gap-1">
                                             <DollarSign className="w-3.5 h-3.5" /> Budget
                                         </p>
-                                        <span className="text-white font-medium">{format(project.budget)}</span>
+                                        <span className="text-white font-medium">{formatAmount(project.budget, project.currency || 'USD')}</span>
                                     </div>
                                 )}
                             </div>

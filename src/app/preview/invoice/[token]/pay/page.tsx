@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { Loader2, CreditCard, Building2, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
+import { formatAmount } from '@/lib/useCurrency';
 
 interface InvoiceData {
     _id: string;
@@ -167,7 +168,7 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ token:
                     <div className="mb-8">
                         <p className="text-slate-400 text-sm mb-1">Invoice #{invoice.invoiceNumber}</p>
                         <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-                            ${invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-xl text-slate-500 font-normal uppercase">{invoice.currency}</span>
+                            {formatAmount(invoice.total, invoice.currency)} <span className="text-xl text-slate-500 font-normal uppercase">{invoice.currency}</span>
                         </h1>
                     </div>
 
@@ -318,7 +319,7 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ token:
                                         </>
                                     ) : (
                                         <>
-                                            Pay ${(invoice.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            Pay {formatAmount(invoice.total, invoice.currency)}
                                         </>
                                     )}
                                 </button>

@@ -1,13 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-    USD: '$', EUR: '€', GBP: '£', LKR: 'Rs', INR: '₹',
-    AUD: 'A$', CAD: 'C$', SGD: 'S$', JPY: '¥', CNY: '¥',
-    AED: 'AED', PKR: 'Rs', BDT: 'BDT', MYR: 'RM', THB: 'THB',
-};
-function sym(currency: string): string {
-    return CURRENCY_SYMBOLS[currency] ?? currency;
-}
+import { formatAmount } from '@/lib/useCurrency';
 
 // Register a basic font (optional, react-pdf has default helvetica)
 // We'll stick to the built-in fonts to ensure it works smoothly in edge/serverless environments without loading external assets unless needed.
@@ -100,7 +93,7 @@ export const InvoicePDF = ({ invoice }: { invoice: any }) => (
                     </View>
                     <View style={styles.amountDueBox}>
                         <Text style={styles.amountDueLabel}>Amount Due:</Text>
-                        <Text style={styles.amountDueValue}>{sym(invoice.currency)}{(invoice.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} {invoice.currency}</Text>
+                        <Text style={styles.amountDueValue}>{formatAmount(invoice.total || 0, invoice.currency)} {invoice.currency}</Text>
                     </View>
                 </View>
             </View>
@@ -115,9 +108,9 @@ export const InvoicePDF = ({ invoice }: { invoice: any }) => (
                 {invoice.lineItems.map((item: any, i: number) => (
                     <View key={i} style={styles.tableRow}>
                         <Text style={styles.colDesc}>{item.description}</Text>
-                        <Text style={styles.colRate}>{sym(invoice.currency)}{(item.unitPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>
+                        <Text style={styles.colRate}>{formatAmount(item.unitPrice || 0, invoice.currency)}</Text>
                         <Text style={styles.colQty}>{item.quantity}</Text>
-                        <Text style={[styles.colTotal, { fontWeight: 'bold' }]}>{sym(invoice.currency)}{(item.quantity * item.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>
+                        <Text style={[styles.colTotal, { fontWeight: 'bold' }]}>{formatAmount(item.quantity * item.unitPrice, invoice.currency)}</Text>
                     </View>
                 ))}
             </View>
@@ -134,23 +127,23 @@ export const InvoicePDF = ({ invoice }: { invoice: any }) => (
                 <View style={styles.totalsBox}>
                     <View style={styles.totalsRow}>
                         <Text style={styles.totalsLabel}>Subtotal:</Text>
-                        <Text style={styles.totalsValue}>{sym(invoice.currency)}{(invoice.subtotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>
+                        <Text style={styles.totalsValue}>{formatAmount(invoice.subtotal || 0, invoice.currency)}</Text>
                     </View>
                     {invoice.taxTotal > 0 && (
                         <View style={styles.totalsRow}>
                             <Text style={styles.totalsLabel}>Tax:</Text>
-                            <Text style={styles.totalsValue}>{sym(invoice.currency)}{invoice.taxTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>
+                            <Text style={styles.totalsValue}>{formatAmount(invoice.taxTotal, invoice.currency)}</Text>
                         </View>
                     )}
                     {invoice.discount > 0 && (
                         <View style={styles.totalsRow}>
                             <Text style={styles.totalsLabel}>Discount:</Text>
-                            <Text style={styles.totalsValue}>-{sym(invoice.currency)}{invoice.discount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>
+                            <Text style={styles.totalsValue}>-{formatAmount(invoice.discount, invoice.currency)}</Text>
                         </View>
                     )}
                     <View style={styles.grandTotalRow}>
                         <Text style={styles.grandTotalLabel}>Total Due:</Text>
-                        <Text style={styles.grandTotalValue}>{sym(invoice.currency)}{(invoice.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>
+                        <Text style={styles.grandTotalValue}>{formatAmount(invoice.total || 0, invoice.currency)}</Text>
                     </View>
                 </View>
             </View>
