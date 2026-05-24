@@ -9,7 +9,7 @@ import {
     TrendingUp, DollarSign, Briefcase, CheckCircle, Download,
     Calendar, Filter, FileText, ChevronRight, Loader2, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
-import { useCurrency } from '@/lib/useCurrency';
+import { useCurrency, formatAmount } from '@/lib/useCurrency';
 
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -35,7 +35,7 @@ export default function ReportsPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [mounted, setMounted] = useState(false);
     const reportRef = useRef<HTMLDivElement>(null);
-    const { symbol, format } = useCurrency();
+    const { symbol, currency } = useCurrency();
 
     useEffect(() => {
         setMounted(true);
@@ -112,7 +112,7 @@ export default function ReportsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard
                         title="Total Revenue"
-                        value={format(data.summary.totalRevenue)}
+                        value={formatAmount(data.summary.totalRevenue, currency)}
                         sub="All time earnings"
                         icon={<DollarSign className="w-5 h-5" />}
                         color="text-emerald-400"
@@ -120,7 +120,7 @@ export default function ReportsPage() {
                     />
                     <StatCard
                         title="Pending"
-                        value={format(data.summary.totalPending)}
+                        value={formatAmount(data.summary.totalPending, currency)}
                         sub="Outstanding invoices"
                         icon={<TrendingUp className="w-5 h-5" />}
                         color="text-blue-400"
@@ -236,13 +236,13 @@ export default function ReportsPage() {
                                             {m.count} Invoices
                                         </td>
                                         <td className="px-8 py-6 text-emerald-400 font-bold text-right">
-                                            {format(m.revenue)}
+                                            {formatAmount(m.revenue, currency)}
                                         </td>
                                         <td className="px-8 py-6 text-blue-400 font-bold text-right">
-                                            {format(m.pending)}
+                                            {formatAmount(m.pending, currency)}
                                         </td>
                                         <td className="px-8 py-6 text-white font-black text-right">
-                                            {format(m.revenue + m.pending)}
+                                            {formatAmount(m.revenue + m.pending, currency)}
                                         </td>
                                     </tr>
                                 ))}

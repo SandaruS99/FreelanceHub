@@ -7,7 +7,7 @@ import {
     Users, FolderKanban, CheckSquare, FileText, DollarSign, Clock, TrendingUp, Plus, ArrowRight
 } from 'lucide-react';
 
-import { useCurrency } from '@/lib/useCurrency';
+import { useCurrency, formatAmount } from '@/lib/useCurrency';
 
 interface Stats {
     clients: number;
@@ -19,7 +19,7 @@ interface Stats {
 export default function DashboardPage() {
     const { data: session } = useSession();
     const user = session?.user as { name?: string } | undefined;
-    const { format } = useCurrency();
+    const { currency } = useCurrency();
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -111,8 +111,8 @@ export default function DashboardPage() {
                     </h2>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
-                            { label: 'Revenue (This Month)', value: loading ? '—' : format(stats?.invoices.revenueThisMonth ?? 0), icon: TrendingUp, color: 'text-green-400' },
-                            { label: 'Pending Amount', value: loading ? '—' : format(stats?.invoices.pendingAmount ?? 0), icon: Clock, color: 'text-amber-400' },
+                            { label: 'Revenue (This Month)', value: loading ? '—' : formatAmount(stats?.invoices.revenueThisMonth ?? 0, currency), icon: TrendingUp, color: 'text-green-400' },
+                            { label: 'Pending Amount', value: loading ? '—' : formatAmount(stats?.invoices.pendingAmount ?? 0, currency), icon: Clock, color: 'text-amber-400' },
                             { label: 'Total Invoices', value: loading ? '—' : (stats?.invoices.total ?? 0), icon: FileText, color: 'text-blue-400' },
                             { label: 'Paid Invoices', value: loading ? '—' : (stats?.invoices.paid ?? 0), icon: CheckSquare, color: 'text-purple-400' },
                         ].map(({ label, value, icon: Icon, color }) => (
