@@ -16,6 +16,9 @@ export async function GET(req: NextRequest) {
 
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
     const [clients, projects, openTasks, invoiceAgg] = await Promise.all([
         Client.countDocuments({ freelancerId: userObjectId }),
         Project.countDocuments({ freelancerId: userObjectId }),
@@ -24,7 +27,17 @@ export async function GET(req: NextRequest) {
             { $match: { freelancerId: userObjectId } },
             { $group: {
                 _id: '$status',
-                count: { $sum: 1 }
+                count: { $sum: 1 },
+                totalAmount: { $sum: '$total' },
+                thisMonthAmount: {
+                    $sum: {
+                        $cond: [
+                            { $gte: ['$issueDate', startOfMonth] },
+                            '$total',
+                            0
+                        ]
+                    }
+                }
             }}
         ]),
     ]);
@@ -33,13 +46,17 @@ export async function GET(req: NextRequest) {
     let totalInvoices = 0;
     let pendingInvoices = 0;
     let paidInvoices = 0;
+    let pendingAmount = 0;
+    let revenueThisMonth = 0;
 
-    invoiceAgg.forEach((item: { _id: string; count: number }) => {
+    invoiceAgg.forEach((item: { _id: string; count: number; totalAmount: number; thisMonthAmount: number }) => {
         totalInvoices += item.count;
         if (['sent', 'viewed', 'overdue'].includes(item._id)) {
             pendingInvoices += item.count;
+            pendingAmount += item.totalAmount;
         } else if (item._id === 'paid') {
             paidInvoices += item.count;
+            revenueThisMonth += item.thisMonthAmount;
         }
     });
 
@@ -51,6 +68,8 @@ export async function GET(req: NextRequest) {
             total: totalInvoices,
             pending: pendingInvoices,
             paid: paidInvoices,
+            pendingAmount,
+            revenueThisMonth,
         },
     });
 }

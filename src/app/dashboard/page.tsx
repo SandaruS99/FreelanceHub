@@ -7,16 +7,19 @@ import {
     Users, FolderKanban, CheckSquare, FileText, DollarSign, Clock, TrendingUp, Plus, ArrowRight
 } from 'lucide-react';
 
+import { useCurrency } from '@/lib/useCurrency';
+
 interface Stats {
     clients: number;
     projects: number;
     tasks: number;
-    invoices: { total: number; pending: number; paid: number };
+    invoices: { total: number; pending: number; paid: number; pendingAmount: number; revenueThisMonth: number };
 }
 
 export default function DashboardPage() {
     const { data: session } = useSession();
     const user = session?.user as { name?: string } | undefined;
+    const { format } = useCurrency();
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -106,15 +109,16 @@ export default function DashboardPage() {
                     <h2 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-green-400" /> Invoice Overview
                     </h2>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
-                            { label: 'Total Invoices', value: stats?.invoices.total ?? 0, icon: FileText, color: 'text-blue-400' },
-                            { label: 'Pending Payment', value: stats?.invoices.pending ?? 0, icon: Clock, color: 'text-amber-400' },
-                            { label: 'Paid', value: stats?.invoices.paid ?? 0, icon: DollarSign, color: 'text-green-400' },
+                            { label: 'Revenue (This Month)', value: loading ? '—' : format(stats?.invoices.revenueThisMonth ?? 0), icon: TrendingUp, color: 'text-green-400' },
+                            { label: 'Pending Amount', value: loading ? '—' : format(stats?.invoices.pendingAmount ?? 0), icon: Clock, color: 'text-amber-400' },
+                            { label: 'Total Invoices', value: loading ? '—' : (stats?.invoices.total ?? 0), icon: FileText, color: 'text-blue-400' },
+                            { label: 'Paid Invoices', value: loading ? '—' : (stats?.invoices.paid ?? 0), icon: CheckSquare, color: 'text-purple-400' },
                         ].map(({ label, value, icon: Icon, color }) => (
                             <div key={label} className="bg-white/5 rounded-xl p-4 text-center">
                                 <Icon className={`w-5 h-5 mx-auto mb-2 ${color}`} />
-                                <p className="text-2xl font-bold text-white">{loading ? '—' : value}</p>
+                                <p className="text-xl font-bold text-white">{value}</p>
                                 <p className="text-slate-400 text-xs mt-1">{label}</p>
                             </div>
                         ))}
