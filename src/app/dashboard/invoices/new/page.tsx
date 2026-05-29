@@ -4,7 +4,14 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2, Plus, Trash2, Calendar, FileText, Send, X, MessageCircle } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { ArrowLeft, Save, Loader2, Plus, Trash2, Calendar, Send, X, MessageCircle, Palette, FileText } from 'lucide-react';
+import { InvoicePDF } from '@/components/InvoicePDF';
+
+const PDFViewer = dynamic(() => import('@react-pdf/renderer').then(mod => mod.PDFViewer), {
+    ssr: false,
+    loading: () => <div className="h-full w-full min-h-[600px] animate-pulse bg-slate-800/50 rounded-2xl flex items-center justify-center text-slate-500">Loading Preview...</div>
+});
 
 // Map ISO currency codes to their display symbols
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -59,9 +66,9 @@ function InvoiceForm() {
         discount: 0,
         notes: 'Thank you for your business!',
         currency: 'USD',
+        template: 'modern',
     });
 
-    // Auto-set currency from user account settings
     useEffect(() => {
         if (session?.user?.currency) {
             setForm(f => ({ ...f, currency: session.user.currency! }));
@@ -80,7 +87,6 @@ function InvoiceForm() {
     }, []);
 
     const currencySymbol = getCurrencySymbol(form.currency);
-
     const updateForm = (key: string, value: string | number) => setForm((f) => ({ ...f, [key]: value }));
 
     const updateItem = (id: string, field: keyof LineItem, value: string | number) => {
@@ -102,6 +108,35 @@ function InvoiceForm() {
     const taxAmount = subtotal * (form.taxRate / 100);
     const total = subtotal + taxAmount - form.discount;
 
+    // Create a mock invoice object for the live preview
+    const selectedClient = clients.find(c => c._id === form.clientId);
+    const previewInvoice = {
+        freelancerId: session?.user ? {
+            name: session.user.name,
+            email: session.user.email,
+            businessName: (session.user as any).businessName || '',
+            businessAddress: (session.user as any).businessAddress || '',
+            phone: (session.user as any).phone || '',
+            website: (session.user as any).website || '',
+        } : {},
+        clientId: selectedClient || { name: 'Client Name', company: 'Company LLC', email: 'client@example.com' },
+        invoiceNumber: 'INV-XXXX',
+        issueDate: form.issueDate,
+        dueDate: form.dueDate,
+        currency: form.currency,
+        lineItems: items.map(i => ({
+            description: i.description || 'Item Description',
+            quantity: i.quantity || 1,
+            unitPrice: i.rate || 0
+        })),
+        subtotal: subtotal,
+        taxTotal: taxAmount,
+        discount: form.discount,
+        total: Math.max(0, total),
+        notes: form.notes,
+        template: form.template,
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.clientId) {
@@ -109,7 +144,6 @@ function InvoiceForm() {
             return;
         }
 
-        // Clean empty items
         const validItems = items.filter(i => i.description.trim() !== '');
         if (validItems.length === 0) {
             setError('Please add at least one line item with a description');
@@ -199,7 +233,6 @@ function InvoiceForm() {
             targetUrl = `https://wa.me/?text=${message}`;
         }
         
-        // 1. Trigger automatic local download for the sender
         const link = document.createElement('a');
         link.href = pdfUrl;
         link.setAttribute('download', `Invoice-${createdInvoicePublicToken}.pdf`);
@@ -207,7 +240,6 @@ function InvoiceForm() {
         link.click();
         document.body.removeChild(link);
         
-        // 2. Open WhatsApp
         window.open(targetUrl, '_blank');
         
         router.push('/dashboard/invoices');
@@ -218,8 +250,9 @@ function InvoiceForm() {
         router.push('/dashboard/invoices');
         router.refresh();
     };
+
     return (
-        <div className="max-w-4xl mx-auto pb-12">
+        <div className="w-full pb-12 max-w-[1600px] mx-auto">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
                     <Link
@@ -250,9 +283,34 @@ function InvoiceForm() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
                 {/* Main Builder Area */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="space-y-6">
+                    {/* Template Selection */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                        <h2 className="text-lg font-semibold text-white mb-6 border-b border-white/5 pb-4 flex items-center gap-2">
+                            <Palette className="w-5 h-5 text-purple-400" /> Choose a Template
+                        </h2>
+                        <div className="grid grid-cols-3 gap-4">
+                            {[
+                                { id: 'modern', label: 'Modern', desc: 'Sleek with accents' },
+                                { id: 'classic', label: 'Classic', desc: 'Traditional B&W' },
+                                { id: 'minimal', label: 'Minimal', desc: 'Clean & airy' }
+                            ].map(tpl => (
+                                <button
+                                    key={tpl.id}
+                                    onClick={() => updateForm('template', tpl.id)}
+                                    className={`p-4 rounded-xl border text-left transition-all ${form.template === tpl.id 
+                                        ? 'bg-purple-500/20 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.2)]' 
+                                        : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                                >
+                                    <h3 className={`font-bold ${form.template === tpl.id ? 'text-purple-300' : 'text-white'}`}>{tpl.label}</h3>
+                                    <p className="text-xs text-slate-400 mt-1">{tpl.desc}</p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                         <h2 className="text-lg font-semibold text-white mb-6 border-b border-white/5 pb-4">Invoice Details</h2>
 
@@ -269,8 +327,17 @@ function InvoiceForm() {
                                     {clients.map(c => <option key={c._id} value={c._id} className="bg-slate-800">{c.name} {c.company ? `(${c.company})` : ''}</option>)}
                                 </select>
                             </div>
-                            <div className="flex items-end text-sm text-slate-400">
-                                <p>Invoice numbers are generated automatically (e.g., INV-001).</p>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1.5">Initial Status</label>
+                                <select
+                                    value={form.status}
+                                    onChange={(e) => updateForm('status', e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                                >
+                                    <option value="draft" className="bg-slate-800">Draft (Not Sent)</option>
+                                    <option value="sent" className="bg-slate-800">Sent to Client</option>
+                                    <option value="paid" className="bg-slate-800">Already Paid</option>
+                                </select>
                             </div>
                         </div>
 
@@ -305,24 +372,30 @@ function InvoiceForm() {
                     </div>
 
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                        <h2 className="text-lg font-semibold text-white mb-6 border-b border-white/5 pb-4">Line Items</h2>
+                        <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+                            <h2 className="text-lg font-semibold text-white">Line Items</h2>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-400">Currency:</span>
+                                <span className="px-2 py-1 bg-white/10 rounded text-xs font-bold text-white">{form.currency} ({currencySymbol})</span>
+                            </div>
+                        </div>
 
                         {/* Table Header */}
                         <div className="hidden sm:grid grid-cols-12 gap-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">
                             <div className="col-span-6">Description</div>
                             <div className="col-span-2 text-right">Qty</div>
-                            <div className="col-span-3 text-right">Rate / Price</div>
+                            <div className="col-span-3 text-right">Rate</div>
                             <div className="col-span-1"></div>
                         </div>
 
                         <div className="space-y-3 mb-4">
-                            {items.map((item, index) => (
+                            {items.map((item) => (
                                 <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 items-center bg-white/[0.02] p-3 sm:p-2 sm:bg-transparent rounded-xl border border-white/5 sm:border-transparent">
                                     <div className="sm:col-span-6">
                                         <label className="sm:hidden block text-xs font-medium text-slate-400 mb-1">Description</label>
                                         <input
                                             type="text"
-                                            placeholder="e.g., UI/UX Design (Homepage)"
+                                            placeholder="e.g., UI/UX Design"
                                             value={item.description}
                                             onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                                             className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
@@ -430,45 +503,17 @@ function InvoiceForm() {
                     </div>
                 </div>
 
-                {/* Sidebar */}
-                <div className="space-y-6">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sticky top-24">
-                        <h2 className="text-lg font-semibold text-white mb-6 border-b border-white/5 pb-4">Settings</h2>
-
-                        {/* Currency badge */}
-                        <div className="mb-5">
-                            <label className="block text-sm font-medium text-slate-300 mb-1.5">Currency</label>
-                            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5">
-                                <span className="text-lg font-bold text-purple-400">{currencySymbol}</span>
-                                <span className="text-white text-sm font-medium">{form.currency}</span>
-                                <span className="text-slate-500 text-xs ml-auto">From account settings</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1.5">Initial Status</label>
-                                <select
-                                    value={form.status}
-                                    onChange={(e) => updateForm('status', e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-                                >
-                                    <option value="draft" className="bg-slate-800">Draft (Not Sent)</option>
-                                    <option value="sent" className="bg-slate-800">Sent to Client</option>
-                                    <option value="paid" className="bg-slate-800">Already Paid</option>
-                                </select>
-                                <p className="text-xs text-slate-500 mt-2">
-                                    Draft invoices do not count towards revenue until sent or paid.
-                                </p>
-                            </div>
-
-                            <div className="pt-4 border-t border-white/5 text-center">
-                                <FileText className="w-8 h-8 text-slate-600 mx-auto mb-3" />
-                                <p className="text-sm text-slate-400">
-                                    Once saved as Draft/Sent, a shareable link and PDF generation option will be available.
-                                </p>
-                            </div>
-                        </div>
+                {/* Live PDF Preview */}
+                <div className="sticky top-24 h-[calc(100vh-140px)] rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-white flex flex-col">
+                    <div className="bg-slate-900 px-4 py-3 border-b border-white/10 flex items-center gap-2 shrink-0">
+                        <FileText className="w-4 h-4 text-purple-400" />
+                        <h3 className="text-sm font-semibold text-white">Live PDF Preview</h3>
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded ml-2">Beta</span>
+                    </div>
+                    <div className="flex-1 w-full relative bg-[#525659]">
+                        <PDFViewer width="100%" height="100%" className="border-0">
+                            <InvoicePDF invoice={previewInvoice} />
+                        </PDFViewer>
                     </div>
                 </div>
             </div>

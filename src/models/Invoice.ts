@@ -13,6 +13,7 @@ export interface IInvoice extends Document {
     clientId: mongoose.Types.ObjectId;
     projectId?: mongoose.Types.ObjectId;
     invoiceNumber: string;
+    template: 'modern' | 'classic' | 'minimal';
     status: 'draft' | 'sent' | 'viewed' | 'paid' | 'overdue' | 'cancelled';
     lineItems: ILineItem[];
     subtotal: number;
@@ -49,6 +50,7 @@ const InvoiceSchema = new Schema<IInvoice>(
         clientId: { type: Schema.Types.ObjectId, ref: 'Client', required: true },
         projectId: { type: Schema.Types.ObjectId, ref: 'Project' },
         invoiceNumber: { type: String, required: true },
+        template: { type: String, enum: ['modern', 'classic', 'minimal'], default: 'modern' },
         status: {
             type: String,
             enum: ['draft', 'sent', 'viewed', 'paid', 'overdue', 'cancelled'],
