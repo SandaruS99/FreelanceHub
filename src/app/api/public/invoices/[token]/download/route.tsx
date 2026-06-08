@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { renderToStream } from '@react-pdf/renderer';
+import { renderToBuffer } from '@react-pdf/renderer';
 import dbConnect from '@/lib/db';
 import Invoice from '@/models/Invoice';
 import User from '@/models/User';
@@ -19,21 +19,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
             return new NextResponse('Invoice not found', { status: 404 });
         }
 
-        // Generate PDF stream
-        const pdfStream = await renderToStream(<InvoicePDF invoice={invoice} />);
-
-        // Convert the Node.js Readable stream into a web standard ReadableStream
-        const webStream = new ReadableStream({
-            start(controller) {
-                pdfStream.on('data', (chunk) => controller.enqueue(chunk));
-                pdfStream.on('end', () => controller.close());
-                pdfStream.on('error', (err) => controller.error(err));
-            }
-        });
-
+        // Generate PDF buffer
+        const pdfBuffer = await renderToBuffer(<InvoicePDF invoice={invoice} />);
+        
         const filename = `Invoice_${invoice.invoiceNumber}.pdf`;
 
-        return new NextResponse(webStream, {
+        return new NextResponse(pdfBuffer, {
             headers: {
                 'Content-Type': 'application/pdf',
                 'Content-Disposition': `attachment; filename="${filename}"`,

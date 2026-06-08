@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import { formatAmount } from '@/lib/useCurrency';
+import { formatAmount } from '@/lib/formatCurrency';
 
 // --- Shared Helper ---
 const renderInvoiceNumber = (invoice: any) => `#${invoice.invoiceNumber || 'DRAFT'}`;
