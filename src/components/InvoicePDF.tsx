@@ -113,10 +113,25 @@ const ModernTemplate = ({ invoice }: { invoice: any }) => (
         <View style={modernStyles.totalsSection}>
             <View style={modernStyles.notesSection}>
                 {invoice.notes ? (
-                    <>
+                    <View style={{ marginBottom: 15 }}>
                         <Text style={modernStyles.label}>Notes</Text>
                         <Text style={modernStyles.text}>{invoice.notes}</Text>
-                    </>
+                    </View>
+                ) : null}
+                {invoice.terms ? (
+                    <View style={{ marginBottom: 15 }}>
+                        <Text style={modernStyles.label}>Terms & Conditions</Text>
+                        <Text style={modernStyles.text}>{invoice.terms}</Text>
+                    </View>
+                ) : null}
+                {invoice.bankDetails?.accountNumber ? (
+                    <View>
+                        <Text style={modernStyles.label}>Bank Details</Text>
+                        <Text style={modernStyles.text}>{invoice.bankDetails.bankName}</Text>
+                        <Text style={modernStyles.text}>{invoice.bankDetails.branch}</Text>
+                        <Text style={modernStyles.text}>A/C Name: {invoice.bankDetails.accountName}</Text>
+                        <Text style={modernStyles.text}>A/C No: {invoice.bankDetails.accountNumber}</Text>
+                    </View>
                 ) : null}
             </View>
             <View style={modernStyles.totalsBox}>
@@ -241,10 +256,25 @@ const ClassicTemplate = ({ invoice }: { invoice: any }) => (
         <View style={classicStyles.totalsSection}>
             <View style={classicStyles.notes}>
                 {invoice.notes && (
-                    <>
-                        <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Terms & Notes:</Text>
+                    <View style={{ marginBottom: 15 }}>
+                        <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Notes:</Text>
                         <Text style={{ color: '#555', lineHeight: 1.4 }}>{invoice.notes}</Text>
-                    </>
+                    </View>
+                )}
+                {invoice.terms && (
+                    <View style={{ marginBottom: 15 }}>
+                        <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Terms & Conditions:</Text>
+                        <Text style={{ color: '#555', lineHeight: 1.4 }}>{invoice.terms}</Text>
+                    </View>
+                )}
+                {invoice.bankDetails?.accountNumber && (
+                    <View>
+                        <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Bank Details:</Text>
+                        <Text style={{ color: '#555', lineHeight: 1.4 }}>{invoice.bankDetails.bankName}</Text>
+                        <Text style={{ color: '#555', lineHeight: 1.4 }}>{invoice.bankDetails.branch}</Text>
+                        <Text style={{ color: '#555', lineHeight: 1.4 }}>A/C Name: {invoice.bankDetails.accountName}</Text>
+                        <Text style={{ color: '#555', lineHeight: 1.4 }}>A/C No: {invoice.bankDetails.accountNumber}</Text>
+                    </View>
                 )}
             </View>
             <View style={classicStyles.totalsBox}>
@@ -370,10 +400,33 @@ const MinimalTemplate = ({ invoice }: { invoice: any }) => (
             </View>
         </View>
 
-        {invoice.notes && (
-            <View style={{ marginTop: 40 }}>
-                <Text style={minimalStyles.sectionLabel}>Notes</Text>
-                <Text style={minimalStyles.text}>{invoice.notes}</Text>
+        {(invoice.notes || invoice.terms || invoice.bankDetails?.accountNumber) && (
+            <View style={{ marginTop: 40, flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View style={{ width: '48%' }}>
+                    {invoice.notes && (
+                        <View style={{ marginBottom: 15 }}>
+                            <Text style={minimalStyles.sectionLabel}>Notes</Text>
+                            <Text style={minimalStyles.text}>{invoice.notes}</Text>
+                        </View>
+                    )}
+                    {invoice.terms && (
+                        <View style={{ marginBottom: 15 }}>
+                            <Text style={minimalStyles.sectionLabel}>Terms & Conditions</Text>
+                            <Text style={minimalStyles.text}>{invoice.terms}</Text>
+                        </View>
+                    )}
+                </View>
+                <View style={{ width: '48%' }}>
+                    {invoice.bankDetails?.accountNumber && (
+                        <View>
+                            <Text style={minimalStyles.sectionLabel}>Bank Details</Text>
+                            <Text style={minimalStyles.text}>{invoice.bankDetails.bankName}</Text>
+                            <Text style={minimalStyles.text}>{invoice.bankDetails.branch}</Text>
+                            <Text style={minimalStyles.text}>A/C Name: {invoice.bankDetails.accountName}</Text>
+                            <Text style={minimalStyles.text}>A/C No: {invoice.bankDetails.accountNumber}</Text>
+                        </View>
+                    )}
+                </View>
             </View>
         )}
 

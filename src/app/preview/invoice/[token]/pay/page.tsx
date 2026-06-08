@@ -12,6 +12,13 @@ interface InvoiceData {
     currency: string;
     freelancer: { name: string; email: string };
     client: { name: string; email: string };
+    bankDetails?: {
+        bankName: string;
+        accountName: string;
+        accountNumber: string;
+        branch: string;
+    };
+    terms?: string;
 }
 
 export default function PublicPaymentPage({ params }: { params: Promise<{ token: string }> }) {
@@ -280,28 +287,37 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ token:
                                         <h3 className="text-blue-400 font-medium mb-3 text-sm flex items-center gap-2">
                                             <Building2 className="w-4 h-4" /> Bank Account Details
                                         </h3>
-                                        <div className="space-y-3 text-sm">
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400">Bank Name</span>
-                                                <span className="text-white font-medium">Chase Bank</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400">Account Name</span>
-                                                <span className="text-white font-medium">{invoice.freelancer.name}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-slate-400">Account Number</span>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-white font-bold font-mono">**** 5678</span>
+                                        {invoice.bankDetails?.accountNumber ? (
+                                            <div className="space-y-3 text-sm">
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-400">Bank Name</span>
+                                                    <span className="text-white font-medium">{invoice.bankDetails.bankName}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-400">Branch</span>
+                                                    <span className="text-white font-medium">{invoice.bankDetails.branch}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-400">Account Name</span>
+                                                    <span className="text-white font-medium">{invoice.bankDetails.accountName}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-slate-400">Account Number</span>
+                                                    <span className="text-white font-bold font-mono">{invoice.bankDetails.accountNumber}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-slate-400">Routing Number</span>
-                                                <span className="text-white font-bold font-mono">121000248</span>
+                                        ) : (
+                                            <p className="text-sm text-slate-400">Please contact the freelancer for bank details.</p>
+                                        )}
+                                        {invoice.terms && (
+                                            <div className="mt-4 pt-4 border-t border-blue-500/20">
+                                                <p className="text-xs text-blue-300 leading-relaxed">
+                                                    <span className="font-semibold">Terms: </span>{invoice.terms}
+                                                </p>
                                             </div>
-                                        </div>
-                                        <div className="mt-4 pt-4 border-t border-blue-500/20">
-                                            <p className="text-xs text-blue-300 leading-relaxed">
+                                        )}
+                                        <div className="mt-3">
+                                            <p className="text-xs text-slate-500 leading-relaxed">
                                                 By clicking below, you confirm that you have transferred the funds to the account detailed above.
                                             </p>
                                         </div>

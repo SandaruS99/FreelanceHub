@@ -26,6 +26,12 @@ export interface IInvoice extends Document {
     dueDate: Date;
     notes?: string;
     terms?: string;
+    bankDetails?: {
+        bankName: string;
+        accountName: string;
+        accountNumber: string;
+        branch: string;
+    };
     publicToken: string;
     paidAt?: Date;
     paidAmount?: number;
@@ -67,6 +73,12 @@ const InvoiceSchema = new Schema<IInvoice>(
         dueDate: { type: Date, required: true },
         notes: { type: String },
         terms: { type: String },
+        bankDetails: {
+            bankName: { type: String },
+            accountName: { type: String },
+            accountNumber: { type: String },
+            branch: { type: String },
+        },
         publicToken: { type: String, required: true, unique: true },
         paidAt: { type: Date },
         paidAmount: { type: Number },

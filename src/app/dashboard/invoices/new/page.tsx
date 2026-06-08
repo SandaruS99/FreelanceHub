@@ -65,6 +65,11 @@ function InvoiceForm() {
         taxRate: 0,
         discount: 0,
         notes: 'Thank you for your business!',
+        terms: 'We require a 50% advanced payment before starting the work.',
+        bankName: 'Commercial Bank',
+        accountName: 'A.S.Sandaruwan',
+        accountNumber: '8271003020',
+        branch: 'Galle Main Street Branch',
         currency: 'USD',
         template: 'modern',
     });
@@ -134,6 +139,13 @@ function InvoiceForm() {
         discount: form.discount,
         total: Math.max(0, total),
         notes: form.notes,
+        terms: form.terms,
+        bankDetails: {
+            bankName: form.bankName,
+            accountName: form.accountName,
+            accountNumber: form.accountNumber,
+            branch: form.branch,
+        },
         template: form.template,
     };
 
@@ -155,6 +167,12 @@ function InvoiceForm() {
 
         const payload = {
             ...form,
+            bankDetails: {
+                bankName: form.bankName,
+                accountName: form.accountName,
+                accountNumber: form.accountNumber,
+                branch: form.branch,
+            },
             discountType: 'fixed',
             lineItems: validItems.map(i => ({
                 description: i.description,
@@ -449,15 +467,48 @@ function InvoiceForm() {
                         </button>
 
                         <div className="mt-6 pt-6 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1.5">Notes / Terms</label>
-                                <textarea
-                                    rows={3}
-                                    value={form.notes}
-                                    onChange={(e) => updateForm('notes', e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
-                                    placeholder="Payment instructions or thank you note..."
-                                />
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Notes</label>
+                                    <textarea
+                                        rows={2}
+                                        value={form.notes}
+                                        onChange={(e) => updateForm('notes', e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
+                                        placeholder="Thank you note..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Terms & Conditions</label>
+                                    <textarea
+                                        rows={2}
+                                        value={form.terms}
+                                        onChange={(e) => updateForm('terms', e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"
+                                        placeholder="Payment terms..."
+                                    />
+                                </div>
+                                <div className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-3">
+                                    <h4 className="text-sm font-medium text-white">Bank Details</h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">Bank Name</label>
+                                            <input type="text" value={form.bankName} onChange={(e) => updateForm('bankName', e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:ring-2 focus:ring-purple-500" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">Branch</label>
+                                            <input type="text" value={form.branch} onChange={(e) => updateForm('branch', e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:ring-2 focus:ring-purple-500" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">Account Name</label>
+                                            <input type="text" value={form.accountName} onChange={(e) => updateForm('accountName', e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:ring-2 focus:ring-purple-500" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">Account No.</label>
+                                            <input type="text" value={form.accountNumber} onChange={(e) => updateForm('accountNumber', e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:ring-2 focus:ring-purple-500" />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Totals Box */}
