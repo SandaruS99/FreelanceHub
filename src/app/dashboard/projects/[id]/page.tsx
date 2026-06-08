@@ -53,6 +53,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const [project, setProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(true);
     const [updatingProgress, setUpdatingProgress] = useState(false);
+    const [updatingStatus, setUpdatingStatus] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [isDeliverModalOpen, setIsDeliverModalOpen] = useState(false);
     const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
@@ -75,6 +76,28 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
         await fetch(`/api/projects/${id}`, { method: 'DELETE' });
         router.push('/dashboard/projects');
         router.refresh();
+    };
+
+    const updateStatus = async (newStatus: string) => {
+        if (!project) return;
+        setUpdatingStatus(true);
+        try {
+            const payload = newStatus === 'completed' 
+                ? { status: newStatus, progress: 100 } 
+                : { status: newStatus };
+                
+            const res = await fetch(`/api/projects/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.project) setProject(data.project);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setUpdatingStatus(false);
+        }
     };
 
     const updateProgress = async (newProgress: number) => {
@@ -153,6 +176,25 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                     </div>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
+                    {project.status !== 'completed' ? (
+                        <button
+                            onClick={() => updateStatus('completed')}
+                            disabled={updatingStatus}
+                            className="flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 hover:text-emerald-300 px-4 py-2 rounded-xl transition text-sm font-medium"
+                        >
+                            {updatingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            Mark Completed
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => updateStatus('active')}
+                            disabled={updatingStatus}
+                            className="flex items-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 hover:text-amber-300 px-4 py-2 rounded-xl transition text-sm font-medium"
+                        >
+                            {updatingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertCircle className="w-4 h-4" />}
+                            Reopen
+                        </button>
+                    )}
                     {/* Schedule Meet Button */}
                     <button
                         onClick={() => setIsMeetModalOpen(true)}
