@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
         
         const filename = `Invoice_${invoice.invoiceNumber}.pdf`;
 
-        return new NextResponse(pdfBuffer, {
+        return new NextResponse(pdfBuffer as unknown as BodyInit, {
             headers: {
                 'Content-Type': 'application/pdf',
                 'Content-Disposition': `attachment; filename="${filename}"`,
