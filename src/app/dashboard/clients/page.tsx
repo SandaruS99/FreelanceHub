@@ -20,25 +20,23 @@ export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [selectedLabel, setSelectedLabel] = useState('');
 
     const fetchClients = useCallback(async () => {
         setLoading(true);
         const params = new URLSearchParams();
         if (search) params.set('search', search);
-        if (selectedLabel) params.set('tag', selectedLabel);
         const res = await fetch(`/api/clients?${params}`);
         const data = await res.json();
         setClients(data.clients ?? []);
         setLoading(false);
-    }, [search, selectedLabel]);
+    }, [search]);
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
             fetchClients();
         }, 300);
         return () => clearTimeout(delayDebounceFn);
-    }, [search, selectedLabel, fetchClients]);
+    }, [search, fetchClients]);
 
     const statusColors: Record<string, string> = {
         active: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -46,11 +44,7 @@ export default function ClientsPage() {
         archived: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     };
 
-    const toggleLabel = (label: string) => {
-        setSelectedLabel(prev => prev === label ? '' : label);
-    };
-
-    const hasFilters = search || selectedLabel;
+    const hasFilters = !!search;
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -85,7 +79,7 @@ export default function ClientsPage() {
                     </div>
                     {hasFilters && (
                         <button
-                            onClick={() => { setSearch(''); setSelectedLabel(''); }}
+                            onClick={() => setSearch('')}
                             className="flex items-center gap-1.5 px-3 py-2.5 text-xs text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition"
                         >
                             <X className="w-3.5 h-3.5" /> Clear
@@ -93,39 +87,7 @@ export default function ClientsPage() {
                     )}
                 </div>
 
-                {/* Label filter row */}
-                <div className="flex flex-wrap items-center gap-2">
-                    <span className="flex items-center gap-1.5 text-xs text-slate-500 font-medium shrink-0">
-                        <Tag className="w-3.5 h-3.5" /> Filter by label:
-                    </span>
-                    {CLIENT_LABELS.map(label => (
-                        <button
-                            key={label.id}
-                            onClick={() => toggleLabel(label.label)}
-                            className={`px-2.5 py-1 rounded border text-[11px] uppercase tracking-wider font-bold whitespace-nowrap transition-all duration-150
-                                ${selectedLabel === label.label
-                                    ? `${label.colorClass} ring-2 ring-offset-1 ring-offset-slate-900 scale-105`
-                                    : `${label.colorClass} opacity-50 hover:opacity-80`
-                                }`}
-                        >
-                            {label.label}
-                        </button>
-                    ))}
-                </div>
             </div>
-
-            {/* Active filter badge */}
-            {selectedLabel && (
-                <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xs text-slate-400">Showing clients labelled:</span>
-                    <span className={`px-2.5 py-1 rounded border text-[11px] uppercase tracking-wider font-bold ${getLabelColorClass(selectedLabel)}`}>
-                        {selectedLabel}
-                    </span>
-                    <button onClick={() => setSelectedLabel('')} className="text-slate-500 hover:text-slate-300 transition">
-                        <X className="w-3.5 h-3.5" />
-                    </button>
-                </div>
-            )}
 
             {/* Grid */}
             {loading ? (
@@ -204,14 +166,12 @@ export default function ClientsPage() {
                                             {client.tags && client.tags.length > 0 ? (
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {client.tags.map(tag => (
-                                                        <button
+                                                        <span
                                                             key={tag}
-                                                            onClick={() => toggleLabel(tag)}
-                                                            title={`Filter by "${tag}"`}
-                                                            className={`px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider font-bold whitespace-nowrap transition-all hover:scale-105 ${getLabelColorClass(tag)} ${selectedLabel === tag ? 'ring-2 ring-offset-1 ring-offset-slate-900' : ''}`}
+                                                            className={`px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider font-bold whitespace-nowrap ${getLabelColorClass(tag)}`}
                                                         >
                                                             {tag}
-                                                        </button>
+                                                        </span>
                                                     ))}
                                                 </div>
                                             ) : (
