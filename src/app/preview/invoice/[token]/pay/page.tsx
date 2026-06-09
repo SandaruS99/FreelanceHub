@@ -346,7 +346,7 @@ export default function PublicPaymentPage({ params }: { params: Promise<{ token:
             </div>
 
             <div className="mt-12 text-center text-sm text-slate-500">
-                <p>Powered by <span className="text-white font-medium tracking-tight">FreelanceHub</span></p>
+                <p>Powered by <span className="text-white font-medium tracking-tight">PromoU Software</span></p>
             </div>
         </div>
     );
