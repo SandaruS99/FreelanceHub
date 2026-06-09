@@ -1,46 +1,122 @@
-'use client';
+export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import mongoose from 'mongoose';
 import {
     Users, FolderKanban, CheckSquare, FileText, DollarSign, Clock, TrendingUp, Plus, ArrowRight
 } from 'lucide-react';
 
-import { useCurrency, formatAmount } from '@/lib/useCurrency';
+import { auth } from '@/lib/auth';
+import dbConnect from '@/lib/db';
+import Client from '@/models/Client';
+import Project from '@/models/Project';
+import Task from '@/models/Task';
+import Invoice from '@/models/Invoice';
+import { redirect } from 'next/navigation';
+import { formatAmount } from '@/lib/formatCurrency';
 
-interface Stats {
-    clients: number;
-    projects: number;
-    tasks: number;
-    invoices: { total: number; pending: number; paid: number; pendingAmount: number; revenueThisMonth: number };
-}
+export default async function DashboardPage() {
+    const session = await auth();
+    if (!session?.user) redirect('/auth/login');
 
-export default function DashboardPage() {
-    const { data: session } = useSession();
-    const user = session?.user as { name?: string } | undefined;
-    const { currency } = useCurrency();
-    const [stats, setStats] = useState<Stats | null>(null);
-    const [loading, setLoading] = useState(true);
+    const userId = (session.user as { id: string }).id;
+    const userName = session.user.name;
+    const userCurrency = (session.user as any).currency || 'USD';
 
-    useEffect(() => {
-        fetch('/api/dashboard/stats', { cache: 'no-store' })
-            .then((r) => r.json())
-            .then((data) => {
-                setStats(data);
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
-    }, []);
+    await dbConnect();
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [clients, projects, openTasks, invoiceAgg] = await Promise.all([
+        Client.countDocuments({ freelancerId: userObjectId }),
+        Project.countDocuments({ freelancerId: userObjectId }),
+        Task.countDocuments({ freelancerId: userObjectId, status: { $ne: 'done' } }),
+        Invoice.aggregate([
+            { $match: { freelancerId: userObjectId } },
+            { $group: {
+                _id: { status: '$status', currency: '$currency' },
+                count: { $sum: 1 },
+                totalAmount: { $sum: '$total' },
+                thisMonthAmount: {
+                    $sum: {
+                        $cond: [
+                            { $gte: ['$issueDate', startOfMonth] },
+                            '$total',
+                            0
+                        ]
+                    }
+                }
+            }}
+        ]),
+    ]);
+
+    // Fetch exchange rates to handle multi-currency invoices
+    let rates: Record<string, number> = { USD: 1 };
+    try {
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { next: { revalidate: 3600 } });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.rates) rates = data.rates;
+        }
+    } catch (error) {
+        rates = { USD: 1, EUR: 0.92, GBP: 0.79, INR: 83.1, LKR: 310, AUD: 1.53, CAD: 1.36 };
+    }
+
+    const userRate = rates[userCurrency] || 1;
+
+    // Process invoice aggregation
+    let totalInvoices = 0;
+    let pendingInvoices = 0;
+    let paidInvoices = 0;
+    let pendingAmount = 0;
+    let revenueThisMonth = 0;
+
+    invoiceAgg.forEach((item: { _id: { status: string; currency: string }; count: number; totalAmount: number; thisMonthAmount: number }) => {
+        totalInvoices += item.count;
+
+        const invoiceCurrency = item._id.currency || 'USD';
+        const invoiceRate = rates[invoiceCurrency] || 1;
+
+        // Convert to USD first, then to the user's preferred currency
+        const toUsdRatio = 1 / invoiceRate;
+        const conversionRatio = toUsdRatio * userRate;
+
+        const convertedTotalAmount = item.totalAmount * conversionRatio;
+        const convertedThisMonthAmount = item.thisMonthAmount * conversionRatio;
+
+        if (['sent', 'viewed', 'overdue'].includes(item._id.status)) {
+            pendingInvoices += item.count;
+            pendingAmount += convertedTotalAmount;
+        } else if (item._id.status === 'paid') {
+            paidInvoices += item.count;
+            revenueThisMonth += convertedThisMonthAmount;
+        }
+    });
+
+    const stats = {
+        clients,
+        projects,
+        tasks: openTasks,
+        invoices: {
+            total: totalInvoices,
+            pending: pendingInvoices,
+            paid: paidInvoices,
+            pendingAmount,
+            revenueThisMonth,
+        },
+    };
 
     const hour = new Date().getHours();
     const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
     const statCards = [
-        { label: 'Total Clients', value: stats?.clients ?? 0, icon: Users, href: '/dashboard/clients', color: 'from-blue-500 to-cyan-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-        { label: 'Active Projects', value: stats?.projects ?? 0, icon: FolderKanban, href: '/dashboard/projects', color: 'from-purple-500 to-violet-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-        { label: 'Open Tasks', value: stats?.tasks ?? 0, icon: CheckSquare, href: '/dashboard/tasks', color: 'from-amber-500 to-orange-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-        { label: 'Pending Invoices', value: stats?.invoices.pending ?? 0, icon: FileText, href: '/dashboard/invoices', color: 'from-rose-500 to-pink-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20' },
+        { label: 'Total Clients', value: stats.clients, icon: Users, href: '/dashboard/clients', color: 'from-blue-500 to-cyan-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+        { label: 'Active Projects', value: stats.projects, icon: FolderKanban, href: '/dashboard/projects', color: 'from-purple-500 to-violet-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+        { label: 'Open Tasks', value: stats.tasks, icon: CheckSquare, href: '/dashboard/tasks', color: 'from-amber-500 to-orange-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+        { label: 'Pending Invoices', value: stats.invoices.pending, icon: FileText, href: '/dashboard/invoices', color: 'from-rose-500 to-pink-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20' },
     ];
 
     const quickActions = [
@@ -55,7 +131,7 @@ export default function DashboardPage() {
             {/* Greeting */}
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-white">
-                    {greeting}, {user?.name?.split(' ')[0] ?? 'there'}! 👋
+                    {greeting}, {userName?.split(' ')[0] ?? 'there'}! 👋
                 </h1>
                 <p className="text-slate-400 mt-1">Here&apos;s what&apos;s happening with your business today.</p>
             </div>
@@ -74,7 +150,7 @@ export default function DashboardPage() {
                                 <Icon className="w-4 h-4 text-white" />
                             </div>
                         </div>
-                        <p className="text-3xl font-bold text-white">{loading ? '—' : value}</p>
+                        <p className="text-3xl font-bold text-white">{value}</p>
                         <p className="text-xs text-slate-500 mt-1 group-hover:text-slate-400 transition flex items-center gap-1">
                             View all <ArrowRight className="w-3 h-3" />
                         </p>
@@ -111,10 +187,10 @@ export default function DashboardPage() {
                     </h2>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
-                            { label: 'Revenue (This Month)', value: loading ? '—' : formatAmount(stats?.invoices.revenueThisMonth ?? 0, currency), icon: TrendingUp, color: 'text-green-400' },
-                            { label: 'Pending Amount', value: loading ? '—' : formatAmount(stats?.invoices.pendingAmount ?? 0, currency), icon: Clock, color: 'text-amber-400' },
-                            { label: 'Total Invoices', value: loading ? '—' : (stats?.invoices.total ?? 0), icon: FileText, color: 'text-blue-400' },
-                            { label: 'Paid Invoices', value: loading ? '—' : (stats?.invoices.paid ?? 0), icon: CheckSquare, color: 'text-purple-400' },
+                            { label: 'Revenue (This Month)', value: formatAmount(stats.invoices.revenueThisMonth, userCurrency), icon: TrendingUp, color: 'text-green-400' },
+                            { label: 'Pending Amount', value: formatAmount(stats.invoices.pendingAmount, userCurrency), icon: Clock, color: 'text-amber-400' },
+                            { label: 'Total Invoices', value: stats.invoices.total, icon: FileText, color: 'text-blue-400' },
+                            { label: 'Paid Invoices', value: stats.invoices.paid, icon: CheckSquare, color: 'text-purple-400' },
                         ].map(({ label, value, icon: Icon, color }) => (
                             <div key={label} className="bg-white/5 rounded-xl p-4 text-center">
                                 <Icon className={`w-5 h-5 mx-auto mb-2 ${color}`} />

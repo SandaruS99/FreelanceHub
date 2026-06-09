@@ -61,6 +61,7 @@ const InvoiceSchema = new Schema<IInvoice>(
             type: String,
             enum: ['draft', 'sent', 'viewed', 'paid', 'overdue', 'cancelled'],
             default: 'draft',
+            index: true,
         },
         lineItems: [LineItemSchema],
         subtotal: { type: Number, required: true, default: 0 },

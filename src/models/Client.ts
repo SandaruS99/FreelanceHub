@@ -34,7 +34,7 @@ const ClientSchema = new Schema<IClient>(
         website: { type: String, trim: true },
         notes: { type: String },
         tags: [{ type: String, trim: true }],
-        status: { type: String, enum: ['active', 'inactive', 'archived'], default: 'active' },
+        status: { type: String, enum: ['active', 'inactive', 'archived'], default: 'active', index: true },
         avatar: { type: String },
     },
     { timestamps: true }
