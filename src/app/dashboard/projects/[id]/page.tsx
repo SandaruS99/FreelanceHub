@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ArrowLeft, Calendar, Loader2, Trash2, Edit, CheckSquare,
-    AlignLeft, DollarSign, Building2, User, Send, ExternalLink,
+    AlignLeft, Wallet, Building2, User, Send, ExternalLink,
     MessageSquare, Video, Copy, Check, AlertCircle
 } from 'lucide-react';
 import { useCurrency, formatAmount } from '@/lib/useCurrency';
@@ -59,6 +59,8 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [meetLinkCopied, setMeetLinkCopied] = useState(false);
+    
+    const { currency: userCurrency } = useCurrency();
 
     useEffect(() => {
         fetch(`/api/projects/${id}`)
@@ -340,9 +342,9 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                 {project.budget && (
                                     <div>
                                         <p className="text-sm font-medium text-slate-400 mb-1 flex items-center gap-1">
-                                            <DollarSign className="w-3.5 h-3.5" /> Budget
+                                            <Wallet className="w-3.5 h-3.5" /> Budget
                                         </p>
-                                        <span className="text-white font-medium">{formatAmount(project.budget, project.currency || 'USD')}</span>
+                                        <span className="text-white font-medium">{formatAmount(project.budget, project.currency === 'USD' ? userCurrency : (project.currency || userCurrency))}</span>
                                     </div>
                                 )}
                             </div>

@@ -18,7 +18,7 @@ interface TaskForm {
 }
 
 function ProjectForm() {
-    const { symbol } = useCurrency();
+    const { symbol, currency } = useCurrency();
     const router = useRouter();
     const searchParams = useSearchParams();
     const preSelectedClient = searchParams.get('client');
@@ -73,6 +73,7 @@ function ProjectForm() {
         const payload = {
             ...form,
             budget: form.budget ? Number(form.budget) : undefined,
+            currency,
             tasks: validTasks
         };
 
