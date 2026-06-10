@@ -31,7 +31,7 @@ export default function EditProjectModal({ project, onSuccess, onClose }: EditPr
         priority: project.priority || 'medium',
         budget: project.budget || '',
         startDate: formatDate(project.startDate),
-        endDate: formatDate(project.endDate),
+        endDate: formatDate(project.deadline),
         progress: project.progress || 0,
     });
 

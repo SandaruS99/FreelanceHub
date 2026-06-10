@@ -22,7 +22,7 @@ interface Project {
     status: string;
     priority: string;
     startDate?: string;
-    endDate?: string;
+    deadline?: string;
     budget?: number;
     progress: number;
     deliveryFile?: string;
@@ -363,7 +363,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                         <Calendar className="w-4 h-4 text-slate-500" /> Target End Date
                                     </p>
                                     <p className="text-white text-sm">
-                                        {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not Set'}
+                                        {project.deadline ? new Date(project.deadline).toLocaleDateString() : 'Not Set'}
                                     </p>
                                 </div>
                             </div>
@@ -493,7 +493,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                     clientName={project.clientId?.name || 'Client'}
                     clientWhatsapp={project.clientId?.whatsapp}
                     onSuccess={(updatedProject) => {
-                        setProject(updatedProject);
+                        setProject(prev => prev ? { ...prev, ...updatedProject } : prev);
                         setIsDeliverModalOpen(false);
                     }}
                     onClose={() => setIsDeliverModalOpen(false)}

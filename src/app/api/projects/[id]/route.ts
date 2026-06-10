@@ -43,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             { _id: id, freelancerId: userId },
             sanitizedData,
             { new: true, runValidators: true }
-        ).populate('clientId', 'name company');
+        ).populate('clientId', 'name company email whatsapp');
 
         if (!updated) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
