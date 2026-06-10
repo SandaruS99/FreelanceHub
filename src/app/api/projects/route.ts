@@ -28,19 +28,29 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const session = await auth();
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    try {
+        const session = await auth();
+        if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const userId = (session.user as { id: string }).id;
-    const { tasks, ...projectData } = await req.json();
+        const userId = (session.user as { id: string }).id;
+        const { tasks, ...projectData } = await req.json();
 
-    await dbConnect();
+        // Sanitize data
+        if (projectData.startDate === '') projectData.startDate = null;
+        if (projectData.endDate === '') {
+            projectData.deadline = null;
+        } else if (projectData.endDate) {
+            projectData.deadline = projectData.endDate;
+        }
+        delete projectData.endDate;
 
-    // Create the project
-    const project = await Project.create({
-        ...projectData,
-        freelancerId: userId
-    });
+        await dbConnect();
+
+        // Create the project
+        const project = await Project.create({
+            ...projectData,
+            freelancerId: userId
+        });
 
     // Create tasks if provided
     if (tasks && Array.isArray(tasks) && tasks.length > 0) {
@@ -56,4 +66,8 @@ export async function POST(req: NextRequest) {
     await logActivity(userId, 'Created Project', `Project: ${projectData.name}${tasks?.length ? ` with ${tasks.length} tasks` : ''}`);
 
     return NextResponse.json({ project }, { status: 201 });
+    } catch (error: any) {
+        console.error('POST project error:', error);
+        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    }
 }
